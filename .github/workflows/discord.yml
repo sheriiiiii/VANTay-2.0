@@ -1,18 +1,29 @@
-name: Notify Discord on Push
+name: GitHub Notifications to Discord
 
 on:
   push:
     branches:
       - main
-      - sheree  # add your branch name here too if you want
+      - sheree
 
 jobs:
-  discord:
+  notify-all:
     runs-on: ubuntu-latest
     steps:
-      - name: Send message to Discord
+      - name: Notify general updates to #github-updates
         run: |
           curl -H "Content-Type: application/json" \
           -X POST \
-          -d "{\"content\": \"🚀 New push by $GITHUB_ACTOR to *$GITHUB_REPOSITORY* on branch *$GITHUB_REF_NAME*!\"}" \
+          -d "{\"content\": \"🚀 New push to *$GITHUB_REPOSITORY* on branch *$GITHUB_REF_NAME* by $GITHUB_ACTOR\"}" \
           ${{ secrets.DISCORD_WEBHOOK }}
+
+  notify-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify commits to #commits
+        run: |
+          commits=$(cat $GITHUB_EVENT_PATH | jq -r '.commits[] | "- " + .message + " (by " + .author.name + ")"' | tr '\n' '\\n')
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{\"content\": \"📝 Commit Summary:\n$commits\"}" \
+          ${{ secrets.DISCORD_WEBHOOK_COMMITS }}
