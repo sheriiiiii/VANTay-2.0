@@ -1,4 +1,4 @@
-import MobileLandingPage from "@/components/landing-page/mobileLandingPage"
+import MobileLandingPage from "@/components/passenger-side/mobileLandingPage"
 
 export default function LandingPage() {
   return <MobileLandingPage />
