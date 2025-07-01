@@ -73,7 +73,7 @@ export default function Receipt({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-b via-white from-indigo-300 px-4 py-6">
       {/* Header */}
       <div className="flex items-center mb-8">
         <button onClick={handleBack} className="mr-4">
@@ -84,10 +84,11 @@ export default function Receipt({
 
       {/* Instructions */}
       <div className="text-center mb-8">
-        <p className="text-gray-600 text-lg">Please proceed to the counter and present this .</p>
+        <p className="text-gray-600 text-md">Please proceed to the counter and present this.</p>
       </div>
 
       {/* Download Button */}
+     
       <div className="text-center mb-8">
         <Button
           onClick={handleDownload}
@@ -98,7 +99,6 @@ export default function Receipt({
           Download
         </Button>
       </div>
-
       {/* Receipt/Ticket Card */}
       <div className="max-w-sm mx-auto mb-8">
         <Card className="bg-white shadow-lg rounded-2xl border-0 overflow-hidden">
@@ -136,7 +136,7 @@ export default function Receipt({
       <div className="max-w-sm mx-auto mb-8">
         <Button
           onClick={handleBackToHome}
-          className="w-full bg-slate-800 hover:bg-slate-700 text-white rounded-lg h-12 font-medium"
+          className="w-full  bg-blue-800 hover:bg-blue-900 text-white rounded-lg h-12 font-medium"
         >
           <Home className="h-5 w-5 mr-2" />
           Back to Home

@@ -1,13 +1,14 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
 
 interface Trip {
-  id: number
-  tripNumber: string
-  route: string
-  availableSeats: number
+  id: number;
+  tripNumber: string;
+  route: string;
+  availableSeats: number;
 }
 
 const mockTrips: Trip[] = [
@@ -29,45 +30,58 @@ const mockTrips: Trip[] = [
     route: "Iloilo to San Jose",
     availableSeats: 10,
   },
-]
+];
 
 export default function TripLists() {
   const handleSelectSeat = (tripId: number) => {
-    console.log(`Selecting seat for trip ${tripId}`)
+    console.log(`Selecting seat for trip ${tripId}`);
     // Handle seat selection logic here
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-b via-white from-indigo-300 px-4 py-6">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Find Your Ride</h1>
+        <p className="text-sm text-gray-700 mt-1">Select available trip</p>
       </div>
 
       {/* Trip Cards */}
-      <div className="space-y-6 max-w-sm mx-auto">
+      <div className="space-y-8 max-w-xs mx-auto">
         {mockTrips.map((trip) => (
-          <Card key={trip.id} className="bg-white shadow-md rounded-2xl border-0">
-            <CardContent className="p-6 text-center">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">{trip.tripNumber}</h2>
+          <Card
+            key={trip.id}
+            className="bg-white shadow-lg rounded-2xl border-0 overflow-hidden p-0 h-44"
+          >
+            <CardContent className="p-0">
+              {/* Dark Header */}
+              <div className="bg-blue-400 bg-gradient-to-t via-blue-500 from-blue-700 h-8 w-full" />
 
-              <p className="text-gray-700 font-medium mb-3">{trip.route}</p>
+              {/* Content Section */}
+              <div className="p-3 text-left">
+                <p className="text-gray-600 text-xs mb-1">{trip.tripNumber}</p>
 
-              <div className="mb-4">
-                <span className="text-gray-600 text-sm">Available Seats: </span>
-                <span className="font-bold text-gray-900">{trip.availableSeats}</span>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">
+                  {trip.route}
+                </h2>
+
+                <p className="text-gray-700 text-xs mb-4">
+                  Available Seats:{" "}
+                  <span className="font-bold">{trip.availableSeats}</span>
+                </p>
+
+                <Button
+                  onClick={() => handleSelectSeat(trip.id)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium flex items-center justify-center gap-1"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Select a seat
+                </Button>
               </div>
-
-              <Button
-                onClick={() => handleSelectSeat(trip.id)}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white rounded-lg h-12 font-medium"
-              >
-                Select a seat
-              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
     </div>
-  )
+  );
 }

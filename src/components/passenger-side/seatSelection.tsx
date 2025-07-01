@@ -91,7 +91,7 @@ export default function SeatSelection() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 to-transparent px-4 py-6">
       {/* Header */}
       <div className="flex items-center mb-6">
         <button onClick={handleBack} className="mr-4">
@@ -209,7 +209,7 @@ export default function SeatSelection() {
         <Button
           onClick={handleContinue}
           disabled={!selectedSeat}
-          className="w-full bg-slate-800 hover:bg-slate-700 text-white rounded-lg h-12 font-medium disabled:opacity-50"
+          className="w-full bg-blue-800 hover:bg-blue-900 text-white rounded-lg h-12 font-medium disabled:opacity-50"
         >
           Continue
         </Button>

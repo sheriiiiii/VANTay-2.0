@@ -45,7 +45,7 @@ export default function Payment({
   }
 
   return (
-    <div className="min-h-screen bg-white px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 px-4 py-6">
       {/* Header */}
       <div className="flex items-center mb-12">
         <button onClick={handleBack} className="mr-4" disabled={isProcessing}>
