@@ -18,7 +18,7 @@ export default function MobileLandingPage() {
       {/* CTA Button */}
       <div className="w-full max-w-sm mb-8">
         <Button
-          className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-full text-lg font-medium"
+          className="w-full h-14 bg-blue-900 hover:bg-blue-800 text-white rounded-full text-lg font-medium"
           size="lg"
         >
           Let's get started!
