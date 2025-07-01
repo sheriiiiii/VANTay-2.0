@@ -13,9 +13,155 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Admin users only
 model User {
   id        Int      @id @default(autoincrement())
   name      String
-  email      String
+  email     String   @unique
+  password  String   // Hashed password
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
+
+// Van information
+model Van {
+  id           Int      @id @default(autoincrement())
+  plateNumber  String   @unique
+  capacity     Int      // Total number of seats
+  model        String?
+  status       VanStatus @default(ACTIVE)
+  routeId      Int
+  route        Route    @relation(fields: [routeId], references: [id])
+  trips        Trip[]
+  seats        Seat[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Routes for vans
+model Route {
+  id          Int      @id @default(autoincrement())
+  name        String   // e.g., "Terminal A to Terminal B"
+  origin      String
+  destination String
+  vans        Van[]
+  trips       Trip[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Daily trips
+model Trip {
+  id            Int        @id @default(autoincrement())
+  vanId         Int
+  van           Van        @relation(fields: [vanId], references: [id])
+  routeId       Int
+  route         Route      @relation(fields: [routeId], references: [id])
+  tripDate      DateTime   // Date of the trip
+  arrivalTime   String?    // Flexible departure time
+  status        TripStatus @default(SCHEDULED)
+  availableSeats Int       // Current available seats
+  tickets       Ticket[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([vanId, tripDate]) // One trip per van per day
+}
+
+// Seat configuration for each van
+model Seat {
+  id         Int      @id @default(autoincrement())
+  vanId      Int
+  van        Van      @relation(fields: [vanId], references: [id])
+  seatNumber String   // e.g., "A1", "B2"
+  tickets    Ticket[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([vanId, seatNumber])
+}
+
+// Passenger tickets/bookings
+model Ticket {
+  id                 Int                  @id @default(autoincrement())
+  ticketNumber       String               @unique @default(cuid())
+  tripId             Int
+  trip               Trip                 @relation(fields: [tripId], references: [id])
+  seatId             Int
+  seat               Seat                 @relation(fields: [seatId], references: [id])
+  
+  // Passenger information
+  passengerName      String
+  passengerAddress     String
+  passengerAge       Int
+  passengerPhone     String
+  passengerEmergencyContact String
+
+  
+  // Pricing and classification
+  passengerType      PassengerType        @default(REGULAR)
+  regularFare        Float                @default(200.00)
+  discount           Float                @default(0.00)
+  totalFare          Float
+  
+  // Payment and status
+  paymentMethod      PaymentMethod        @default(CASH)
+  paymentStatus      PaymentStatus        @default(PENDING)
+  ticketStatus       TicketStatus         @default(ACTIVE)
+  
+  // QR Code and verification
+  qrCode             String               @unique
+  isScanned          Boolean              @default(false)
+  scannedAt          DateTime?
+  
+  // Timestamps
+  bookedAt           DateTime             @default(now())
+  paidAt             DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@unique([tripId, seatId]) // One ticket per seat per trip
+}
+
+// Enums
+enum VanStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum TripStatus {
+  SCHEDULED
+  BOARDING
+  DEPARTED
+  COMPLETED
+  CANCELLED
+}
+
+enum PassengerType {
+  REGULAR
+  STUDENT
+  PWD
+  SENIOR_CITIZEN
+}
+
+enum PaymentMethod {
+  CASH
+  GCASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  CANCELLED
+}
+
+enum TicketStatus {
+  ACTIVE
+  USED
+  CANCELLED
+  EXPIRED
+}
+
