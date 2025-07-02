@@ -1,7 +1,17 @@
+"use client";
+
+import { useRouter } from "next/navigation"; 
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
+
 export default function MobileLandingPage() {
+  const router = useRouter(); 
+
+  const handleStart = () => {
+    router.push("/passenger/trip-lists"); 
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-gradient-to-br from-indigo-400 to-white-400 flex flex-col items-center justify-center px-6 py-8">
       <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full">
@@ -20,6 +30,7 @@ export default function MobileLandingPage() {
         <Button
           className="w-full h-14 bg-blue-900 hover:bg-blue-800 text-white rounded-full text-lg font-medium"
           size="lg"
+          onClick={handleStart} 
         >
           Let's get started!
           <ArrowRight className="ml-2 h-5 w-5" />
