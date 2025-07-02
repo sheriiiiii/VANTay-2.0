@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react"; // ✅ Move this to the top
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Home, Info } from "lucide-react";
@@ -12,27 +14,58 @@ import AdminSidebar from "@/components/sidebar/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 
 export default function AdminDashboard() {
-  const stats = [
-    {
-      title: "Total Vans",
-      value: "24",
-      subtitle: "Active Vehicles",
-    },
+  const [stats, setStats] = useState([
+    { title: "Total Vans", value: "-", subtitle: "Active Vehicles" },
     {
       title: "Today's Trip",
-      value: "24",
+      value: "-",
       subtitle: "Scheduled departures",
-      highlight: "24 completed",
+      highlight: "-",
       highlightColor: "text-green-500",
     },
     {
       title: "Tickets Sold",
-      value: "100",
+      value: "-",
       subtitle: "This month",
-      highlight: "15% from last month",
+      highlight: "-",
       highlightColor: "text-green-500",
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch("/api/admin/stats");
+        const data = await res.json();
+
+        setStats([
+          {
+            title: "Total Vans",
+            value: data.totalVans.toString(),
+            subtitle: "Active Vehicles",
+          },
+          {
+            title: "Today's Trip",
+            value: data.todayTripCount.toString(),
+            subtitle: "Scheduled departures",
+            highlight: `${data.completedTripsCount} completed`,
+            highlightColor: "text-green-500",
+          },
+          {
+            title: "Tickets Sold",
+            value: data.ticketsSold.toString(),
+            subtitle: "This month",
+            highlight: "↑ 15% from last month",
+            highlightColor: "text-green-500",
+          },
+        ]);
+      } catch (err) {
+        console.error("Failed to load stats:", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const recentActivities = [
     {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Settings, Filter, ArrowUpDown, Edit, Trash2 } from "lucide-react";
@@ -12,16 +13,30 @@ import AdminSidebar from "@/components/sidebar/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 import CreateVanModal from "@/components/modals/createVan";
 
+type Van = {
+  plateNumber: string;
+  model?: string;
+  capacity: number;
+  route?: { name: string };
+  latestTrip?: { driverName?: string };
+};
+
 export default function ManageVan() {
-  const vans = [
-    {
-      plateNumber: "ABC-123",
-      model: "Toyota Hiace",
-      capacity: "15 seats",
-      route: "Iloilo - Antique",
-      driver: "Wilson Ang",
-    },
-  ];
+  const [vans, setVans] = useState<Van[]>([]);
+
+  useEffect(() => {
+    const fetchVans = async () => {
+      try {
+        const res = await fetch("/api/admin/vans");
+        const data = await res.json();
+        setVans(data);
+      } catch (err) {
+        console.error("Failed to fetch vans:", err);
+      }
+    };
+
+    fetchVans();
+  }, []);
 
   return (
     <SidebarProvider>
@@ -99,17 +114,11 @@ export default function ManageVan() {
                         key={index}
                         className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                       >
-                        <td className="py-4 px-6 text-gray-900">
-                          {van.plateNumber}
-                        </td>
-                        <td className="py-4 px-6 text-gray-900">{van.model}</td>
-                        <td className="py-4 px-6 text-gray-900">
-                          {van.capacity}
-                        </td>
-                        <td className="py-4 px-6 text-gray-900">{van.route}</td>
-                        <td className="py-4 px-6 text-gray-900">
-                          {van.driver}
-                        </td>
+                        <td className="py-4 px-6 text-gray-900">{van.plateNumber}</td>
+                        <td className="py-4 px-6 text-gray-900">{van.model ?? "N/A"}</td>
+                        <td className="py-4 px-6 text-gray-900">{van.capacity} seats</td>
+                        <td className="py-4 px-6 text-gray-900">{van.route?.name ?? "Unassigned"}</td>
+                        <td className="py-4 px-6 text-gray-900">{van.latestTrip?.driverName ?? "-"}</td>
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-2">
                             <Button

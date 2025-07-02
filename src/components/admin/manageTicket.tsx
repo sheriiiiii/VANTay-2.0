@@ -12,21 +12,35 @@ import {
 import AdminSidebar from "@/components/sidebar/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 import CreateTicketModal from "@/components/modals/createTicket";
+import { useEffect, useState } from "react";
+
+type TicketType = {
+  ticketNumber: string;
+  passenger: string;
+  contactNumber: string;
+  route: string;
+  date: string;
+  time: string;
+  seat: string;
+  payment: string;
+};
 
 export default function ManageTickets() {
-  const tickets = [
-    {
-      ticketNumber: "TK08",
-      passenger: "Lowes Alonsagay",
-      contactNumber: "09996499999",
-      route: "Iloilo - Antique",
-      date: "7/14/2025",
-      time: "08:00 AM",
-      seat: "SN15",
-      price: "$200",
-      payment: "Paid",
-    },
-  ];
+  const [tickets, setTickets] = useState<TicketType[]>([]);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const res = await fetch("/api/admin/tickets");
+        const data = await res.json();
+        setTickets(data);
+      } catch (err) {
+        console.error("Failed to fetch tickets:", err);
+      }
+    };
+
+    fetchTickets();
+  }, []);
 
   return (
     <SidebarProvider>
@@ -98,9 +112,6 @@ export default function ManageTickets() {
                         Seat
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-900">
-                        Price
-                      </th>
-                      <th className="text-left py-4 px-4 font-semibold text-gray-900">
                         Payment
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-900">
@@ -134,9 +145,6 @@ export default function ManageTickets() {
                         </td>
                         <td className="py-4 px-4 text-gray-900">
                           {ticket.seat}
-                        </td>
-                        <td className="py-4 px-4 text-gray-900">
-                          {ticket.price}
                         </td>
                         <td className="py-4 px-4">
                           <Badge className="bg-green-100 text-green-800 hover:bg-green-100">

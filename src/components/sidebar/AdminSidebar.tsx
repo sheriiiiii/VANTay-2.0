@@ -11,6 +11,7 @@ import {
   User,
   LogOut,
   Settings,
+  Route,
 } from "lucide-react";
 import {
   Sidebar,
@@ -60,6 +61,7 @@ export default function AdminSidebar() {
       icon: Ticket,
     },
     { name: "Manage Seat", href: "/admin/dashboard/manage-seat", icon: Users },
+    { name: "Manage Route", href: "/admin/dashboard/manage-route", icon: Route },
   ];
 
   const displayName =

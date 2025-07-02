@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -19,15 +20,39 @@ import AdminSidebar from "@/components/sidebar/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 import CreateTripModal from "@/components/modals/createTrip";
 
+type Trip = {
+  id: number;
+  van?: {
+    plateNumber?: string;
+    capacity?: number;
+  };
+  route?: {
+    name?: string;
+  };
+  tripDate: string;
+  driverName?: string;
+  driverPhone?: string;
+  status?: string;
+  availableSeats?: number;
+  bookedSeats?: number;
+};
+
 export default function ManageTrip() {
-  const trips = [
-    {
-      van: "ABC-123",
-      route: "Iloilo - Antique",
-      date: "7/14/2025",
-      seats: "8/15",
-    },
-  ];
+  const [trips, setTrips] = useState<Trip[]>([]);
+
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const res = await fetch("/api/admin/trips");
+        const data = await res.json();
+        setTrips(data);
+      } catch (err) {
+        console.error("Failed to fetch trips:", err);
+      }
+    };
+
+    fetchTrips();
+  }, []);
 
   return (
     <SidebarProvider>
@@ -44,7 +69,7 @@ export default function ManageTrip() {
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)">
+        <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)]">
           <div className="mb-4">
             <p className="text-gray-600">
               Manage scheduled trips and availability
@@ -80,16 +105,25 @@ export default function ManageTrip() {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                        Van
+                        Van Plate Number
                       </th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">
                         Route
                       </th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                        Driver Name
+                      </th>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                        Driver Phone
+                      </th>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-900">
                         Date
                       </th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                        Seats
+                        Status
+                      </th>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                        Available Seats
                       </th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">
                         Actions
@@ -97,20 +131,35 @@ export default function ManageTrip() {
                     </tr>
                   </thead>
                   <tbody>
-                    {trips.map((trip, index) => (
+                    {trips.map((trip) => (
                       <tr
-                        key={index}
+                        key={trip.id}
                         className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                       >
-                        <td className="py-4 px-6 text-gray-900">{trip.van}</td>
                         <td className="py-4 px-6 text-gray-900">
-                          {trip.route}
+                          {trip.van?.plateNumber ?? "-"}
                         </td>
-                        <td className="py-4 px-6 text-gray-900">{trip.date}</td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center space-x-2 text-gray-900">
+                        <td className="py-4 px-6 text-gray-900">
+                          {trip.route?.name ?? "-"}
+                        </td>
+                        <td className="py-4 px-6 text-gray-900">
+                          {trip.driverName ?? "-"}
+                        </td>
+                        <td className="py-4 px-6 text-gray-900">
+                          {trip.driverPhone ?? "-"}
+                        </td>
+                        <td className="py-4 px-6 text-gray-900">
+                          {new Date(trip.tripDate).toLocaleDateString()}
+                        </td>
+                        <td className="py-4 px-6 text-gray-900">
+                          {trip.status ?? "-"}
+                        </td>
+                        <td className="py-4 px-6 text-gray-900">
+                          <div className="flex items-center space-x-2">
                             <Users className="h-4 w-4" />
-                            <span>{trip.seats}</span>
+                            <span>
+                              {trip.bookedSeats ?? 0}/{trip.van?.capacity ?? "-"}
+                            </span>
                           </div>
                         </td>
                         <td className="py-4 px-6">
