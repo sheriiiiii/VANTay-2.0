@@ -57,6 +57,8 @@ model Trip {
   van           Van        @relation(fields: [vanId], references: [id])
   routeId       Int
   route         Route      @relation(fields: [routeId], references: [id])
+  driverName    String?    // Optional driver name
+  driverPhone   String?    // Optional driver phone number
   tripDate      DateTime   // Date of the trip
   arrivalTime   String?    // Flexible departure time
   status        TripStatus @default(SCHEDULED)
