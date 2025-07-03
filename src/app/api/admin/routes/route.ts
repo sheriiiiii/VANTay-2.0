@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 const prisma = new PrismaClient();
 
@@ -24,9 +24,9 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { name, origin, destination } = body;
 
     if (!name || !origin || !destination) {
@@ -43,7 +43,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json(newRoute, { status: 201 });
   } catch (error) {
-    console.error("[POST /api/admin/routes]", error);
+    console.error("Error creating route:", error);
     return NextResponse.json({ error: "Failed to create route" }, { status: 500 });
   }
 }
+
