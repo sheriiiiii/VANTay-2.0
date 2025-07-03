@@ -36,7 +36,8 @@ export default function Payment({
     setTimeout(() => {
       console.log("Proceeding with counter payment")
       setIsProcessing(false)
-      // Navigate to confirmation or next step
+      // ✅ Redirect to receipt page
+      router.push("/passenger/receipt")
     }, 1500)
   }
 
@@ -48,7 +49,12 @@ export default function Payment({
     <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 px-4 py-6">
       {/* Header */}
       <div className="flex items-center mb-12">
-        <button onClick={handleBack} className="mr-4" disabled={isProcessing}>
+        <button
+          onClick={handleBack}
+          className="mr-4"
+          disabled={isProcessing}
+          aria-label="Go back"
+        >
           <ArrowLeft className="h-6 w-6 text-gray-900" />
         </button>
         <h1 className="text-2xl font-bold text-gray-900">Payment</h1>
@@ -57,7 +63,7 @@ export default function Payment({
       {/* Total Amount Section */}
       <div className="text-center mb-16">
         <p className="text-gray-600 text-lg mb-8">TOTAL</p>
-        <p className="text-5xl font-bold text-gray-900  ">
+        <p className="text-5xl font-bold text-gray-900">
           {currency}
           {formatAmount(totalAmount)}
         </p>

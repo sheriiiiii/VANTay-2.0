@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight } from "lucide-react";
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowRight } from 'lucide-react';
 
 interface Trip {
   id: number;
@@ -14,28 +15,30 @@ interface Trip {
 const mockTrips: Trip[] = [
   {
     id: 1,
-    tripNumber: "Trip 1",
-    route: "Iloilo to San Jose",
+    tripNumber: 'Trip 1',
+    route: 'Iloilo to San Jose',
     availableSeats: 5,
   },
   {
     id: 2,
-    tripNumber: "Trip 2",
-    route: "Iloilo to San Jose",
+    tripNumber: 'Trip 2',
+    route: 'Iloilo to San Jose',
     availableSeats: 10,
   },
   {
     id: 3,
-    tripNumber: "Trip 3",
-    route: "Iloilo to San Jose",
+    tripNumber: 'Trip 3',
+    route: 'Iloilo to San Jose',
     availableSeats: 10,
   },
 ];
 
 export default function TripLists() {
+  const router = useRouter();
+
   const handleSelectSeat = (tripId: number) => {
-    console.log(`Selecting seat for trip ${tripId}`);
-    // Handle seat selection logic here
+    // Redirect to the seat selection page with the tripId as a query param
+    router.push(`/passenger/seat-selection?tripId=${tripId}`);
   };
 
   return (
@@ -66,7 +69,7 @@ export default function TripLists() {
                 </h2>
 
                 <p className="text-gray-700 text-xs mb-4">
-                  Available Seats:{" "}
+                  Available Seats:{' '}
                   <span className="font-bold">{trip.availableSeats}</span>
                 </p>
 
