@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,33 +11,87 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface CreateVanModalProps {
   trigger?: React.ReactNode;
+  onCreated?: () => void;
 }
 
-export default function CreateVanModal({ trigger }: CreateVanModalProps) {
+export default function CreateVanModal({ trigger, onCreated }: CreateVanModalProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     plateNumber: "",
     model: "",
     capacity: "",
-    route: "",
-    driver: "",
+    routeId: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [routes, setRoutes] = useState<{ id: number; name: string }[]>([]);
+
+  // Fetch routes when modal opens
+  useEffect(() => {
+    if (open) {
+      fetch("/api/admin/routes")
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setRoutes(data);
+          } else {
+            throw new Error("Invalid routes");
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch routes", err);
+          toast.error("Failed to load routes");
+        });
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating van:", formData);
-    setOpen(false);
-    // Reset form
-    setFormData({
-      plateNumber: "",
-      model: "",
-      capacity: "",
-      route: "",
-      driver: "",
-    });
+    const capacity = parseInt(formData.capacity);
+
+    if (
+      !formData.plateNumber ||
+      !formData.model ||
+      isNaN(capacity) ||
+      !formData.routeId
+    ) {
+      toast.error("Please complete all required fields.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/vans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plateNumber: formData.plateNumber,
+          model: formData.model,
+          capacity,
+          routeId: Number(formData.routeId),
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to create van");
+
+      toast.success("Van created successfully!");
+      setOpen(false);
+      setFormData({
+        plateNumber: "",
+        model: "",
+        capacity: "",
+        routeId: "",
+      });
+
+      if (onCreated) onCreated();
+    } catch (err) {
+      console.error(err);
+      toast.error("Error creating van");
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -62,88 +115,52 @@ export default function CreateVanModal({ trigger }: CreateVanModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label
-              htmlFor="plateNumber"
-              className="text-sm font-medium text-gray-700"
-            >
-              Plate Number
-            </Label>
+            <Label htmlFor="plateNumber">Plate Number</Label>
             <Input
               id="plateNumber"
-              placeholder="ABC - 123"
               value={formData.plateNumber}
               onChange={(e) => handleInputChange("plateNumber", e.target.value)}
-              className="w-full"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label
-              htmlFor="model"
-              className="text-sm font-medium text-gray-700"
-            >
-              Model
-            </Label>
+            <Label htmlFor="model">Model</Label>
             <Input
               id="model"
-              placeholder="Toyota"
               value={formData.model}
               onChange={(e) => handleInputChange("model", e.target.value)}
-              className="w-full"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label
-              htmlFor="capacity"
-              className="text-sm font-medium text-gray-700"
-            >
-              Capacity
-            </Label>
+            <Label htmlFor="capacity">Capacity</Label>
             <Input
               id="capacity"
-              placeholder="15 seats"
+              type="number"
               value={formData.capacity}
               onChange={(e) => handleInputChange("capacity", e.target.value)}
-              className="w-full"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label
-              htmlFor="route"
-              className="text-sm font-medium text-gray-700"
-            >
-              Route
-            </Label>
-            <Input
-              id="route"
-              placeholder="Iloilo - Antique"
-              value={formData.route}
-              onChange={(e) => handleInputChange("route", e.target.value)}
-              className="w-full"
+            <Label htmlFor="routeId">Route</Label>
+            <select
+              id="routeId"
+              value={formData.routeId}
+              onChange={(e) => handleInputChange("routeId", e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="driver"
-              className="text-sm font-medium text-gray-700"
             >
-              Driver
-            </Label>
-            <Input
-              id="driver"
-              placeholder="Wilson Ang"
-              value={formData.driver}
-              onChange={(e) => handleInputChange("driver", e.target.value)}
-              className="w-full"
-              required
-            />
+              <option value="">Select a route</option>
+              {routes.map((route) => (
+                <option key={route.id} value={route.id}>
+                  {route.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <Button

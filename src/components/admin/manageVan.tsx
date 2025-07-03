@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Settings, Filter, ArrowUpDown, Edit, Trash2 } from "lucide-react";
@@ -12,31 +12,46 @@ import {
 import AdminSidebar from "@/components/sidebar/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 import CreateVanModal from "@/components/modals/createVan";
-
-type Van = {
-  plateNumber: string;
-  model?: string;
-  capacity: number;
-  route?: { name: string };
-  latestTrip?: { driverName?: string };
-};
+import { toast } from "sonner";
+import type { VanWithRoute } from "@/lib/types";
 
 export default function ManageVan() {
-  const [vans, setVans] = useState<Van[]>([]);
+  const [vans, setVans] = useState<VanWithRoute[]>([]);
+
+  async function fetchVans() {
+    try {
+      const res = await fetch("/api/admin/vans");
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid van data");
+      }
+
+      setVans(data);
+    } catch (err) {
+      console.error("Failed to fetch vans", err);
+      toast.error("Failed to load vans");
+    }
+  }
 
   useEffect(() => {
-    const fetchVans = async () => {
-      try {
-        const res = await fetch("/api/admin/vans");
-        const data = await res.json();
-        setVans(data);
-      } catch (err) {
-        console.error("Failed to fetch vans:", err);
-      }
-    };
-
     fetchVans();
   }, []);
+
+  async function handleDeleteVan(id: number) {
+    if (!confirm("Are you sure you want to delete this van?")) return;
+    try {
+      const res = await fetch(`/api/van/${id}/route`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      toast.success("Van deleted successfully");
+      fetchVans();
+    } catch (err) {
+      console.error("Error deleting van", err);
+      toast.error("Failed to delete van");
+    }
+  }
 
   return (
     <SidebarProvider>
@@ -62,20 +77,12 @@ export default function ManageVan() {
 
           {/* Action Bar */}
           <div className="flex items-center justify-between mb-6">
-            <CreateVanModal />
+            <CreateVanModal onCreated={fetchVans} />
             <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 bg-transparent"
-              >
+              <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
                 <Filter className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 bg-transparent"
-              >
+              <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
                 <ArrowUpDown className="h-4 w-4" />
               </Button>
             </div>
@@ -101,9 +108,6 @@ export default function ManageVan() {
                         Route
                       </th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                        Driver
-                      </th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-900">
                         Actions
                       </th>
                     </tr>
@@ -115,23 +119,21 @@ export default function ManageVan() {
                         className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                       >
                         <td className="py-4 px-6 text-gray-900">{van.plateNumber}</td>
-                        <td className="py-4 px-6 text-gray-900">{van.model ?? "N/A"}</td>
+                        <td className="py-4 px-6 text-gray-900">{van.model}</td>
                         <td className="py-4 px-6 text-gray-900">{van.capacity} seats</td>
-                        <td className="py-4 px-6 text-gray-900">{van.route?.name ?? "Unassigned"}</td>
-                        <td className="py-4 px-6 text-gray-900">{van.latestTrip?.driverName ?? "-"}</td>
+                        <td className="py-4 px-6 text-gray-900">
+                          {van.route?.name || "N/A"}
+                        </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-blue-600 hover:bg-blue-50"
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-red-600 hover:bg-red-50"
+                              onClick={() => handleDeleteVan(van.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
