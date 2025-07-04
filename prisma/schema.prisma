@@ -10,7 +10,7 @@ datasource db {
 model User {
   name      String
   email     String   @unique
-  password  String   // Hashed password
+  password  String // Hashed password
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -64,19 +64,17 @@ model Seat {
   id         Int      @id @default(autoincrement())
   vanId      Int
   van        Van      @relation(fields: [vanId], references: [id])
-  seatNumber String   // e.g., "A1", "B2"
+  seatNumber String // e.g., "A1", "B2"
   tickets    Ticket[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  van        Van      @relation(fields: [vanId], references: [id])
-  tickets    Ticket[]
 
   @@unique([vanId, seatNumber])
 }
 
 model Ticket {
-  id                        Int           @id @default(autoincrement())
-  ticketNumber              String        @unique @default(cuid())
+  id                        Int    @id @default(autoincrement())
+  ticketNumber              String @unique @default(cuid())
   tripId                    Int
   seatId                    Int
   passengerName             String
@@ -85,29 +83,30 @@ model Ticket {
   passengerPhone            String
   passengerEmergencyContact String
 
-  
   // Pricing and classification
-  passengerType      PassengerType        @default(REGULAR)
-  regularFare        Float                @default(200.00)
-  discount           Float                @default(0.00)
-  totalFare          Float
-  
+  passengerType PassengerType @default(REGULAR)
+  regularFare   Float         @default(200.00)
+  discount      Float         @default(0.00)
+  totalFare     Float
+
   // Payment and status
-  paymentMethod      PaymentMethod        @default(CASH)
-  paymentStatus      PaymentStatus        @default(PENDING)
-  ticketStatus       TicketStatus         @default(ACTIVE)
-  
+  paymentMethod PaymentMethod @default(CASH)
+  paymentStatus PaymentStatus @default(PENDING)
+  ticketStatus  TicketStatus  @default(ACTIVE)
+
   // QR Code and verification
-  qrCode             String               @unique
-  isScanned          Boolean              @default(false)
-  scannedAt          DateTime?
-  
+  qrCode    String    @unique
+  isScanned Boolean   @default(false)
+  scannedAt DateTime?
+
   // Timestamps
-  bookedAt           DateTime             @default(now())
-  paidAt             DateTime?
-  cancelledAt        DateTime?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  bookedAt    DateTime  @default(now())
+  paidAt      DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Trip        Trip      @relation(fields: [tripId], references: [id])
+  Seat        Seat      @relation(fields: [seatId], references: [id])
 
   @@unique([tripId, seatId]) // One ticket per seat per trip
 }
@@ -152,4 +151,3 @@ enum TicketStatus {
   EXPIRED
   PENDING
 }
-
