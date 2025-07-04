@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,64 +7,59 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Admin users only
 model User {
-  id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password  String   // Hashed password
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 }
 
-// Van information
 model Van {
-  id           Int      @id @default(autoincrement())
-  plateNumber  String   @unique
-  capacity     Int      // Total number of seats
-  model        String?
-  status       VanStatus @default(ACTIVE)
-  routeId      Int
-  route        Route    @relation(fields: [routeId], references: [id])
-  trips        Trip[]
-  seats        Seat[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          Int       @id @default(autoincrement())
+  plateNumber String    @unique
+  capacity    Int
+  model       String?
+  status      VanStatus @default(ACTIVE)
+  routeId     Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  seats       Seat[]
+  trips       Trip[]
+  route       Route     @relation(fields: [routeId], references: [id])
 }
 
-// Routes for vans
 model Route {
   id          Int      @id @default(autoincrement())
-  name        String   // e.g., "Terminal A to Terminal B"
+  name        String
   origin      String
   destination String
-  vans        Van[]
-  trips       Trip[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  trips       Trip[]
+  vans        Van[]
 }
 
-// Daily trips
 model Trip {
-  id            Int        @id @default(autoincrement())
-  vanId         Int
-  van           Van        @relation(fields: [vanId], references: [id])
-  routeId       Int
-  route         Route      @relation(fields: [routeId], references: [id])
-  driverName    String?    // Optional driver name
-  driverPhone   String?    // Optional driver phone number
-  tripDate      DateTime   // Date of the trip
-  arrivalTime   String?    // Flexible departure time
-  status        TripStatus @default(SCHEDULED)
-  availableSeats Int       // Current available seats
-  tickets       Ticket[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id             Int        @id @default(autoincrement())
+  vanId          Int
+  routeId        Int
+  driverName     String?
+  driverPhone    String?
+  tripDate       DateTime
+  arrivalTime    String?
+  status         TripStatus @default(SCHEDULED)
+  availableSeats Int
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  tickets        Ticket[]
+  route          Route      @relation(fields: [routeId], references: [id])
+  van            Van        @relation(fields: [vanId], references: [id])
 
-  @@unique([vanId, tripDate]) // One trip per van per day
+  @@unique([vanId, tripDate])
 }
 
-// Seat configuration for each van
 model Seat {
   id         Int      @id @default(autoincrement())
   vanId      Int
@@ -79,24 +68,21 @@ model Seat {
   tickets    Ticket[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  van        Van      @relation(fields: [vanId], references: [id])
+  tickets    Ticket[]
 
   @@unique([vanId, seatNumber])
 }
 
-// Passenger tickets/bookings
 model Ticket {
-  id                 Int                  @id @default(autoincrement())
-  ticketNumber       String               @unique @default(cuid())
-  tripId             Int
-  trip               Trip                 @relation(fields: [tripId], references: [id])
-  seatId             Int
-  seat               Seat                 @relation(fields: [seatId], references: [id])
-  
-  // Passenger information
-  passengerName      String
-  passengerAddress     String
-  passengerAge       Int
-  passengerPhone     String
+  id                        Int           @id @default(autoincrement())
+  ticketNumber              String        @unique @default(cuid())
+  tripId                    Int
+  seatId                    Int
+  passengerName             String
+  passengerAddress          String
+  passengerAge              Int
+  passengerPhone            String
   passengerEmergencyContact String
 
   
@@ -126,7 +112,6 @@ model Ticket {
   @@unique([tripId, seatId]) // One ticket per seat per trip
 }
 
-// Enums
 enum VanStatus {
   ACTIVE
   MAINTENANCE
@@ -165,5 +150,6 @@ enum TicketStatus {
   USED
   CANCELLED
   EXPIRED
+  PENDING
 }
 
