@@ -1,40 +1,60 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, Download, Home } from "lucide-react"
+import { ArrowLeft, Download, Home, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 
-interface ReceiptProps {
-  tripNumber?: string
-  route?: string
-  seatNumber?: string | number
-  bookingReference?: string
-  qrCodeData?: string
+interface TicketData {
+  id: number
+  ticketNumber: string
+  totalFare: number
+  qrCodeUrl: string
+  qrCodeData: string
+  paymentStatus?: string
+  trip: {
+    route: string
+    arrivalTime: string
+  }
+  seat: {
+    seatNumber: string
+  }
 }
 
-export default function ReceiptPage({
-  tripNumber = "Trip 1",
-  route = "Iloilo to San Jose",
-  seatNumber = "8",
-  bookingReference = "VANTAY-001-2024",
-  qrCodeData = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VANTAY-BOOKING-001-2024",
-}: ReceiptProps) {
+export default function ReceiptPage() {
   const router = useRouter()
+  const [ticketData, setTicketData] = useState<TicketData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Get ticket data from sessionStorage
+    const storedReceiptData = sessionStorage.getItem("receiptData")
+    if (storedReceiptData) {
+      try {
+        const parsedData = JSON.parse(storedReceiptData)
+        setTicketData(parsedData)
+      } catch (error) {
+        console.error("Failed to parse receipt data:", error)
+      }
+    }
+    setLoading(false)
+  }, [])
 
   const handleBack = () => {
     router.back()
   }
 
   const handleDownload = () => {
+    if (!ticketData) return
+
     // Create a canvas to generate the ticket image
     const canvas = document.createElement("canvas")
     const ctx = canvas.getContext("2d")
-
     if (ctx) {
       canvas.width = 400
-      canvas.height = 700 // Increased height to accommodate QR code
+      canvas.height = 700
 
       // Fill background
       ctx.fillStyle = "#ffffff"
@@ -54,14 +74,19 @@ export default function ReceiptPage({
 
       // Large seat number
       ctx.font = "bold 80px Arial"
-      ctx.fillText(seatNumber.toString(), canvas.width / 2, 200)
+      ctx.fillText(ticketData.seat.seatNumber, canvas.width / 2, 200)
 
       // Trip information
       ctx.font = "bold 18px Arial"
-      ctx.fillText(tripNumber, canvas.width / 2, 280)
-
+      ctx.fillText(ticketData.ticketNumber, canvas.width / 2, 280)
       ctx.font = "16px Arial"
-      ctx.fillText(route, canvas.width / 2, 310)
+      ctx.fillText(ticketData.trip.route, canvas.width / 2, 310)
+      ctx.fillText(`Departure: ${ticketData.trip.arrivalTime}`, canvas.width / 2, 340)
+
+      // Payment status
+      ctx.font = "14px Arial"
+      ctx.fillStyle = "#f59e0b"
+      ctx.fillText("PAYMENT PENDING", canvas.width / 2, 370)
 
       // Load and draw QR code
       const qrImage = new window.Image()
@@ -70,8 +95,14 @@ export default function ReceiptPage({
         // Draw QR code
         const qrSize = 120
         const qrX = (canvas.width - qrSize) / 2
-        const qrY = 380
+        const qrY = 400
         ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
+
+        // Add instructions below QR code
+        ctx.fillStyle = "#000000"
+        ctx.font = "12px Arial"
+        ctx.fillText("Present this ticket at the counter", canvas.width / 2, 550)
+        ctx.fillText(`Total: ₱${ticketData.totalFare.toFixed(2)}`, canvas.width / 2, 570)
 
         // Convert to blob and download after QR code is drawn
         canvas.toBlob((blob) => {
@@ -79,7 +110,7 @@ export default function ReceiptPage({
             const url = URL.createObjectURL(blob)
             const a = document.createElement("a")
             a.href = url
-            a.download = `vantay-ticket-${bookingReference}.png`
+            a.download = `vantay-ticket-${ticketData.ticketNumber}.png`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -87,7 +118,6 @@ export default function ReceiptPage({
           }
         })
       }
-
       qrImage.onerror = () => {
         // If QR code fails to load, still generate the ticket without it
         console.warn("QR code failed to load, generating ticket without QR code")
@@ -96,7 +126,7 @@ export default function ReceiptPage({
             const url = URL.createObjectURL(blob)
             const a = document.createElement("a")
             a.href = url
-            a.download = `vantay-ticket-${bookingReference}.png`
+            a.download = `vantay-ticket-${ticketData.ticketNumber}.png`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -104,14 +134,37 @@ export default function ReceiptPage({
           }
         })
       }
-
-      // Set the QR code source
-      qrImage.src = qrCodeData || "/placeholder.svg"
+      qrImage.src = ticketData.qrCodeUrl
     }
   }
 
   const handleBackToHome = () => {
+    // Clear session storage
+    sessionStorage.removeItem("ticketData")
+    sessionStorage.removeItem("receiptData")
     router.push("/")
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading receipt...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!ticketData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">No ticket information found</p>
+          <Button onClick={() => router.push("/passenger/trips")}>Back to Trips</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -121,19 +174,25 @@ export default function ReceiptPage({
         <button onClick={handleBack} className="mr-4" aria-label="Go back">
           <ArrowLeft className="h-6 w-6 text-gray-900" />
         </button>
-        <h1 className="text-xl font-bold text-gray-900">Pending Payment !</h1>
+        <h1 className="text-xl font-bold text-gray-900">E-Ticket Generated!</h1>
       </div>
 
       {/* Instructions */}
       <div className="text-center mb-8">
-        <p className="text-gray-600 text-sm">Please proceed to the counter and present this .</p>
+        <p className="text-gray-600 text-sm">Please proceed to the counter and present this ticket.</p>
+        <p className="text-gray-500 text-xs mt-1">Total: ₱{ticketData.totalFare.toFixed(2)}</p>
+        <div className="mt-2">
+          <span className="inline-block bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded-full font-medium">
+            Payment Pending
+          </span>
+        </div>
       </div>
 
       {/* Receipt/Ticket Card */}
       <div className="max-w-sm mx-auto mb-8">
         <Card className="bg-white shadow-lg rounded-3xl border-0 overflow-hidden relative">
           <CardContent className="p-8 text-center">
-            {/* Download Button - positioned at top of card */}
+            {/* Download Button */}
             <div className="mb-6">
               <Button
                 onClick={handleDownload}
@@ -153,19 +212,20 @@ export default function ReceiptPage({
 
             {/* Seat Number - Prominent display */}
             <div className="mb-8 relative z-10">
-              <div className="text-8xl font-bold text-gray-900 mb-2">{seatNumber}</div>
+              <div className="text-8xl font-bold text-gray-900 mb-2">{ticketData.seat.seatNumber}</div>
             </div>
 
             {/* Trip Information */}
             <div className="mb-8 relative z-10">
-              <p className="text-lg font-semibold text-gray-900 mb-1">{tripNumber}</p>
-              <p className="text-gray-700 text-sm">{route}</p>
+              <p className="text-lg font-semibold text-gray-900 mb-1">{ticketData.ticketNumber}</p>
+              <p className="text-gray-700 text-sm mb-1">{ticketData.trip.route}</p>
+              <p className="text-gray-600 text-xs">Departure: {ticketData.trip.arrivalTime}</p>
             </div>
 
             {/* QR Code */}
-            <div className="flex justify-center relative z-10">
+            <div className="flex justify-center relative z-10 mb-4">
               <Image
-                src={qrCodeData || "/placeholder.svg"}
+                src={ticketData.qrCodeUrl || "/placeholder.svg?height=120&width=120"}
                 alt="Booking QR Code"
                 width={120}
                 height={120}
@@ -174,6 +234,19 @@ export default function ReceiptPage({
                 unoptimized
                 priority
               />
+            </div>
+
+            {/* Status */}
+            <div className="mt-4 relative z-10">
+              <span className="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+                Payment Pending
+              </span>
+            </div>
+
+            {/* Instructions */}
+            <div className="mt-4 relative z-10">
+              <p className="text-xs text-gray-500">Present this QR code at the counter</p>
+              <p className="text-xs text-gray-500">Total: ₱{ticketData.totalFare.toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>

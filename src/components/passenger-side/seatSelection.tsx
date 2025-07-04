@@ -1,80 +1,176 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, Loader2 } from "lucide-react"
 
-type SeatStatus = 'available' | 'occupied' | 'selected' | 'pending';
+type SeatStatus = "available" | "occupied" | "selected" | "pending"
 
 interface Seat {
-  id: string;
-  status: SeatStatus;
-  row: number;
-  position: 'left' | 'right' | 'driver';
+  id: string
+  seatId: number
+  status: SeatStatus
+  seatNumber: string
 }
 
-const mockSeats: Seat[] = [
-  { id: 'driver', status: 'occupied', row: 0, position: 'driver' },
-  { id: '1A', status: 'pending', row: 1, position: 'left' },
-  { id: '1B', status: 'pending', row: 1, position: 'right' },
-  { id: '1C', status: 'occupied', row: 1, position: 'right' },
-  { id: '2A', status: 'available', row: 2, position: 'left' },
-  { id: '2B', status: 'available', row: 2, position: 'right' },
-  { id: '2C', status: 'available', row: 2, position: 'right' },
-  { id: '3A', status: 'selected', row: 3, position: 'left' },
-  { id: '3B', status: 'available', row: 3, position: 'right' },
-  { id: '3C', status: 'available', row: 3, position: 'right' },
-  { id: '4A', status: 'available', row: 4, position: 'left' },
-  { id: '4B', status: 'available', row: 4, position: 'right' },
-  { id: '4C', status: 'available', row: 4, position: 'right' },
-];
+interface TripDetails {
+  driverName?: string
+  arrivalTime?: string
+  tripDate: string
+}
+
+interface SeatData {
+  tripId: number
+  vanId: number
+  seats: Seat[]
+  tripDetails: TripDetails
+}
 
 export default function SeatSelection() {
-  const router = useRouter();
-  const [seats, setSeats] = useState<Seat[]>(mockSeats);
-  const [selectedSeat, setSelectedSeat] = useState<string | null>('3A');
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tripId = searchParams.get("tripId")
 
-  const handleSeatClick = (seatId: string) => {
-    if (seatId === 'driver') return;
+  const [seatData, setSeatData] = useState<SeatData | null>(null)
+  const [seats, setSeats] = useState<Seat[]>([])
+  const [selectedSeat, setSelectedSeat] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [reserving, setReserving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-    const seat = seats.find((s) => s.id === seatId);
-    if (!seat || seat.status === 'occupied') return;
+  useEffect(() => {
+    if (!tripId) {
+      setError("Trip ID is required")
+      setLoading(false)
+      return
+    }
 
+    fetchSeats()
+  }, [tripId])
+
+  const fetchSeats = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/trips/${tripId}/seats`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch seat data")
+      }
+
+      const data: SeatData = await response.json()
+      setSeatData(data)
+      setSeats(data.seats)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load seats")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSeatClick = async (seatNumber: string) => {
+    const seat = seats.find((s) => s.seatNumber === seatNumber)
+    if (!seat || seat.status === "occupied" || seat.status === "pending") return
+
+    // Update UI immediately for better UX
     setSeats((prevSeats) =>
       prevSeats.map((s) => {
-        if (s.id === selectedSeat) return { ...s, status: 'available' };
-        if (s.id === seatId) return { ...s, status: 'selected' };
-        return s;
+        if (s.seatNumber === selectedSeat) return { ...s, status: "available" }
+        if (s.seatNumber === seatNumber) return { ...s, status: "selected" }
+        return s
       }),
-    );
-    setSelectedSeat(seatId);
-  };
+    )
+    setSelectedSeat(seatNumber)
+  }
 
   const getSeatColor = (status: SeatStatus) => {
     switch (status) {
-      case 'available':
-        return 'bg-green-500 hover:bg-green-600';
-      case 'occupied':
-        return 'bg-red-500 cursor-not-allowed';
-      case 'selected':
-        return 'bg-blue-500';
-      case 'pending':
-        return 'bg-orange-500';
+      case "available":
+        return "bg-green-500 hover:bg-green-600 cursor-pointer"
+      case "occupied":
+        return "bg-red-500 cursor-not-allowed"
+      case "selected":
+        return "bg-blue-500 cursor-pointer"
+      case "pending":
+        return "bg-orange-500 cursor-not-allowed"
       default:
-        return 'bg-gray-300';
+        return "bg-gray-300"
     }
-  };
+  }
 
-  const handleContinue = () => {
-    if (selectedSeat) {
-      router.push(`/passenger/passenger-info?seat=${selectedSeat}`);
+  const handleContinue = async () => {
+    if (!selectedSeat || !tripId) return
+
+    try {
+      setReserving(true)
+
+      // Reserve the seat
+      const response = await fetch(`/api/trips/${tripId}/seats/reserve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ seatNumber: selectedSeat }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to reserve seat")
+      }
+
+      const reservationData = await response.json()
+
+      // Navigate to passenger info with seat and trip details
+      router.push(
+        `/passenger/passenger-info?tripId=${tripId}&seatId=${reservationData.seatId}&seatNumber=${selectedSeat}`,
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reserve seat")
+      // Refresh seat data to get current status
+      fetchSeats()
+    } finally {
+      setReserving(false)
     }
-  };
+  }
 
   const handleBack = () => {
-    router.back();
-  };
+    router.back()
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 to-transparent flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading seats...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 to-transparent flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Group seats into rows of 3 (excluding driver seat)
+  const seatRows: string[][] = []
+  const passengerSeats = seats.filter((seat) => seat.seatNumber !== "driver")
+
+  for (let i = 0; i < passengerSeats.length; i += 3) {
+    const row = passengerSeats.slice(i, i + 3).map((seat) => seat.seatNumber)
+    // Pad row to ensure 3 seats per row for consistent layout
+    while (row.length < 3) {
+      row.push("")
+    }
+    seatRows.push(row)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 to-transparent px-4 py-6">
@@ -85,7 +181,10 @@ export default function SeatSelection() {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Choose Your Seat</h1>
-          <p className="text-gray-600 text-sm">Trip 1</p>
+          <p className="text-gray-600 text-sm">
+            {seatData?.tripDetails.driverName && `Driver: ${seatData.tripDetails.driverName}`}
+            {seatData?.tripDetails.arrivalTime && ` • ${seatData.tripDetails.arrivalTime}`}
+          </p>
         </div>
       </div>
 
@@ -110,42 +209,56 @@ export default function SeatSelection() {
       </div>
 
       {/* Seat Map */}
-      <div className="max-w-xs mx-auto mb-8">
-        <div className="flex justify-between mb-4">
-          <div className="bg-gray-200 rounded-lg p-4 flex-1 mr-2 text-center">
-            <span className="text-sm font-medium text-gray-700">Driver</span>
+      <div className="max-w-xs mx-auto mb-8 px-4">
+        {/* Top Row - Driver and Seat 01 */}
+        {/* Driver Section and Seat 01 */}
+        <div className="flex justify-between items-center gap-3 mb-4">
+          <div className="bg-gray-100 border-2 border-gray-200 rounded-xl p-4 flex-1 text-center min-h-[64px] flex items-center justify-center">
+            <span className="text-sm font-semibold text-gray-700">Driver</span>
           </div>
           <button
-            onClick={() => handleSeatClick('driver')}
-            className="w-16 h-16 bg-red-500 rounded-lg cursor-not-allowed"
-            aria-label="Driver seat"
-            title="Driver seat"
-          />
+            onClick={() => handleSeatClick("01")}
+            className={`w-20 h-16 rounded-xl transition-colors flex items-center justify-center font-bold text-white text-sm ${
+              seats.find((s) => s.seatNumber === "01")?.status === "selected" || selectedSeat === "01"
+                ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+                : seats.find((s) => s.seatNumber === "01")?.status === "occupied"
+                  ? "bg-red-500 cursor-not-allowed"
+                  : seats.find((s) => s.seatNumber === "01")?.status === "pending"
+                    ? "bg-orange-500 cursor-not-allowed"
+                    : "bg-green-500 hover:bg-green-600 cursor-pointer"
+            }`}
+            disabled={
+              seats.find((s) => s.seatNumber === "01")?.status === "occupied" ||
+              seats.find((s) => s.seatNumber === "01")?.status === "pending"
+            }
+            title="Seat 01"
+            aria-label={`Seat 01 - ${seats.find((s) => s.seatNumber === "01")?.status || "available"}`}
+          >
+            01
+          </button>
         </div>
 
-        <div className="space-y-3">
-          {[
-            ['1A', '1B', '1C'],
-            ['2A', '2B', '2C'],
-            ['3A', '3B', '3C'],
-            ['4A', '4B', '4C'],
-          ].map((row, idx) => (
-            <div key={idx} className="flex justify-between">
-              {row.map((seatId) => (
-                <button
-                  key={seatId}
-                  onClick={() => handleSeatClick(seatId)}
-                  className={`w-16 h-16 rounded-lg transition-colors ${
-                    getSeatColor(
-                      seatId === selectedSeat ? 'selected' : seats.find((s) => s.id === seatId)?.status || 'available',
-                    )
-                  }`}
-                  title={`Seat ${seatId}`}
-                  aria-label={`Seat ${seatId}`}
-                />
-              ))}
-            </div>
-          ))}
+        {/* Passenger Seats Grid - 4 rows of 3 seats each */}
+        {/* Passenger Seats Grid */}
+        <div className="grid grid-cols-3 gap-3 justify-items-center">
+          {["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"].map((seatNumber) => {
+            const seat = seats.find((s) => s.seatNumber === seatNumber)
+            const isSelected = seatNumber === selectedSeat
+            const status = isSelected ? "selected" : seat?.status || "available"
+
+            return (
+              <button
+                key={`seat-${seatNumber}`}
+                onClick={() => handleSeatClick(seatNumber)}
+                className={`w-20 h-16 rounded-xl transition-colors flex items-center justify-center font-bold text-white text-sm ${getSeatColor(status)}`}
+                title={`Seat ${seatNumber}`}
+                aria-label={`Seat ${seatNumber} - ${status}`}
+                disabled={status === "occupied" || status === "pending"}
+              >
+                {seatNumber}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -153,12 +266,28 @@ export default function SeatSelection() {
       <div className="max-w-xs mx-auto mb-8">
         <Button
           onClick={handleContinue}
-          disabled={!selectedSeat}
+          disabled={!selectedSeat || reserving}
           className="w-full bg-blue-800 hover:bg-blue-900 text-white rounded-lg h-12 font-medium disabled:opacity-50"
         >
-          Continue
+          {reserving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Reserving...
+            </>
+          ) : (
+            "Continue"
+          )}
         </Button>
       </div>
+
+      {/* Seat Count Info */}
+      <div className="max-w-xs mx-auto text-center text-sm text-gray-600">
+        <p>
+          Available: {seats.filter((s) => s.status === "available").length} | Occupied:{" "}
+          {seats.filter((s) => s.status === "occupied").length} | Pending:{" "}
+          {seats.filter((s) => s.status === "pending").length}
+        </p>
+      </div>
     </div>
-  );
+  )
 }
