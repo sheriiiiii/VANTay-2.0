@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
 import { Separator } from "@/components/ui/separator"
 import CreateRouteModal from "@/components/modals/createRoute"
+import EditRouteModal from "@/components/modals/editRoute"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,8 @@ export default function ManageRouteDash() {
   const [routes, setRoutes] = useState<RouteData[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [editingRoute, setEditingRoute] = useState<RouteData | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   const fetchRoutes = async () => {
     try {
@@ -53,12 +56,10 @@ export default function ManageRouteDash() {
       const res = await fetch(`/api/admin/routes?id=${routeId}`, {
         method: "DELETE",
       })
-
       if (!res.ok) {
         const errorData = await res.json()
         throw new Error(errorData.error || "Failed to delete route")
       }
-
       // Remove the route from the local state
       setRoutes(routes.filter((route) => route.id !== routeId))
       toast.success("Route deleted successfully")
@@ -68,6 +69,15 @@ export default function ManageRouteDash() {
     } finally {
       setDeletingId(null)
     }
+  }
+
+  const handleEditRoute = (route: RouteData) => {
+    setEditingRoute(route)
+    setEditModalOpen(true)
+  }
+
+  const handleRouteUpdated = () => {
+    fetchRoutes() // Refresh the routes list
   }
 
   useEffect(() => {
@@ -89,12 +99,12 @@ export default function ManageRouteDash() {
 
         <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)]">
           <div className="mb-4">
-            <p className="text-gray-600">Create new routes</p>
+            <p className="text-gray-600">Create and manage routes</p>
           </div>
 
           {/* Action Bar */}
           <div className="flex items-center justify-between mb-6">
-            <CreateRouteModal />
+            <CreateRouteModal onCreated={fetchRoutes} />
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
                 <Filter className="h-4 w-4" />
@@ -139,6 +149,7 @@ export default function ManageRouteDash() {
                                 size="icon"
                                 className="h-8 w-8 text-blue-600 hover:bg-blue-50"
                                 title="Edit route"
+                                onClick={() => handleEditRoute(route)}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -193,6 +204,14 @@ export default function ManageRouteDash() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Edit Route Modal */}
+        <EditRouteModal
+          route={editingRoute}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onUpdated={handleRouteUpdated}
+        />
       </SidebarInset>
     </SidebarProvider>
   )

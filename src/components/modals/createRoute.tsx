@@ -60,7 +60,7 @@ export default function CreateRouteModal({ onCreated }: CreateRouteModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-sky-600 hover:bg-sky-700 text-white">Add Route</Button>
+        <Button className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2 rounded-full">Add Route</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

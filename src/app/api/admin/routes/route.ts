@@ -47,6 +47,48 @@ export async function POST(request: NextRequest) {
   }
 }
 
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, name, origin, destination } = body
+
+    if (!id || !name || !origin || !destination) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Convert string to number if needed
+    const routeId = typeof id === "string" ? Number.parseInt(id, 10) : id
+    if (isNaN(routeId)) {
+      return NextResponse.json({ error: "Invalid route ID" }, { status: 400 })
+    }
+
+    // Check if route exists
+    const existingRoute = await prisma.route.findUnique({
+      where: { id: routeId },
+    })
+
+    if (!existingRoute) {
+      return NextResponse.json({ error: "Route not found" }, { status: 404 })
+    }
+
+    // Update the route
+    const updatedRoute = await prisma.route.update({
+      where: { id: routeId },
+      data: {
+        name,
+        origin,
+        destination,
+      },
+    })
+
+    return NextResponse.json(updatedRoute, { status: 200 })
+  } catch (error) {
+    console.error("[PUT /api/admin/routes]", error)
+    return NextResponse.json({ error: "Failed to update route" }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -92,3 +134,4 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete route" }, { status: 500 })
   }
 }
+

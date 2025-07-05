@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
 import { Separator } from "@/components/ui/separator"
 import CreateVanModal from "@/components/modals/createVan"
+import EditVanModal from "@/components/modals/editVan"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -27,6 +28,8 @@ export default function ManageVan() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [vanToDelete, setVanToDelete] = useState<VanWithRoute | null>(null)
+  const [editingVan, setEditingVan] = useState<VanWithRoute | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   async function fetchVans() {
     try {
@@ -62,7 +65,6 @@ export default function ManageVan() {
       fetchVans()
     } catch (err) {
       console.error("Error deleting van:", err)
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete van"
       toast.error("Failed to delete van")
     } finally {
       setIsDeleting(false)
@@ -72,6 +74,15 @@ export default function ManageVan() {
   function openDeleteDialog(van: VanWithRoute) {
     setVanToDelete(van)
     setDeleteDialogOpen(true)
+  }
+
+  function handleEditVan(van: VanWithRoute) {
+    setEditingVan(van)
+    setEditModalOpen(true)
+  }
+
+  function handleVanUpdated() {
+    fetchVans() // Refresh the vans list
   }
 
   useEffect(() => {
@@ -90,10 +101,12 @@ export default function ManageVan() {
             <h1 className="text-2xl font-semibold text-gray-900">Manage your van</h1>
           </div>
         </header>
+
         <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)]">
           <div className="mb-4">
             <p className="text-gray-600">Add, edit, and manage your van fleet</p>
           </div>
+
           {/* Action Bar */}
           <div className="flex items-center justify-between mb-6">
             <CreateVanModal onCreated={fetchVans} />
@@ -106,6 +119,7 @@ export default function ManageVan() {
               </Button>
             </div>
           </div>
+
           {/* Van Table */}
           <Card className="bg-white shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl border-0">
             <CardContent className="p-0">
@@ -148,7 +162,13 @@ export default function ManageVan() {
                           <td className="py-4 px-6 text-gray-900">{van.route?.name || "N/A"}</td>
                           <td className="py-4 px-6">
                             <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                onClick={() => handleEditVan(van)}
+                                title="Edit van"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
@@ -156,6 +176,7 @@ export default function ManageVan() {
                                 size="icon"
                                 className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                                 onClick={() => openDeleteDialog(van)}
+                                title="Delete van"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -170,59 +191,67 @@ export default function ManageVan() {
             </CardContent>
           </Card>
         </div>
-      </SidebarInset>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Van</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <div>
-                  Are you sure you want to delete van <strong>{vanToDelete?.plateNumber}</strong>?
-                </div>
-                {vanToDelete && (
-                  <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md space-y-1">
-                    <div>
-                      <strong>Model:</strong> {vanToDelete.model}
-                    </div>
-                    <div>
-                      <strong>Capacity:</strong> {vanToDelete.capacity} seats
-                    </div>
-                    <div>
-                      <strong>Route:</strong> {vanToDelete.route?.name || "N/A"}
-                    </div>
+        {/* Edit Van Modal */}
+        <EditVanModal
+          van={editingVan}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onUpdated={handleVanUpdated}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Van</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <div>
+                    Are you sure you want to delete van <strong>{vanToDelete?.plateNumber}</strong>?
                   </div>
-                )}
-                <div className="text-red-600 font-medium">
-                  This action cannot be undone. All associated seats and past trips will also be deleted.
+                  {vanToDelete && (
+                    <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md space-y-1">
+                      <div>
+                        <strong>Model:</strong> {vanToDelete.model}
+                      </div>
+                      <div>
+                        <strong>Capacity:</strong> {vanToDelete.capacity} seats
+                      </div>
+                      <div>
+                        <strong>Route:</strong> {vanToDelete.route?.name || "N/A"}
+                      </div>
+                    </div>
+                  )}
+                  <div className="text-red-600 font-medium">
+                    This action cannot be undone. All associated seats and past trips will also be deleted.
+                  </div>
                 </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => vanToDelete && handleDeleteVan(vanToDelete)}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              {isDeleting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Van
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => vanToDelete && handleDeleteVan(vanToDelete)}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Van
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </SidebarInset>
     </SidebarProvider>
   )
 }

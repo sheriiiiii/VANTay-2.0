@@ -17,12 +17,14 @@ import type {
 export interface VanWithRoute {
   id: number
   plateNumber: string
-  model: string | null
+  model: string 
   capacity: number
   route: {
+    id: number
     name: string
   } | null
 }
+
 
 export type TripWithRelations = Trip & {
   van: Van & { route: Route }

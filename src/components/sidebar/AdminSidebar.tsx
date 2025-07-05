@@ -5,13 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Bus,
-  Plus,
   Ticket,
   Users,
   User,
   LogOut,
   Settings,
   Route,
+  MapPinned, 
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,15 +53,11 @@ export default function AdminSidebar() {
 
   const navigationItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: Home },
-    { name: "Manage Van", href: "/admin/dashboard/manage-van", icon: Bus },
-    { name: "Create Trip", href: "/admin/dashboard/manage-trip", icon: Plus },
-    {
-      name: "Manage Tickets",
-      href: "/admin/dashboard/manage-ticket",
-      icon: Ticket,
-    },
-    { name: "Manage Seat", href: "/admin/dashboard/manage-seat", icon: Users },
-    { name: "Manage Route", href: "/admin/dashboard/manage-route", icon: Route },
+    { name: "Routes", href: "/admin/dashboard/manage-route", icon: Route },
+    { name: "Vans", href: "/admin/dashboard/manage-van", icon: Bus },
+    { name: "Trips", href: "/admin/dashboard/manage-trip", icon: MapPinned },
+    { name: "Seats", href: "/admin/dashboard/manage-seat", icon: Users },
+    { name: "Tickets", href: "/admin/dashboard/manage-ticket", icon: Ticket },
   ];
 
   const displayName =
@@ -75,12 +71,14 @@ export default function AdminSidebar() {
       .toUpperCase();
 
   return (
-    <Sidebar className="border-r border-gray-100 bg-white shadow-xl z-30">
+    <Sidebar className="border-r bg-white shadow-lg z-30 w-64">
       {/* Header */}
       <SidebarHeader className="border-b border-gray-200">
-        <div className="flex items-center space-x-3 p-2">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">V</span>
+        <div className="flex items-center space-x-3 p-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center shadow-md">
+            <span className="text-white font-extrabold text-lg tracking-wider">
+              V
+            </span>
           </div>
           <div>
             <div className="text-xs text-gray-500 uppercase tracking-wide">
@@ -92,9 +90,9 @@ export default function AdminSidebar() {
       </SidebarHeader>
 
       {/* Navigation */}
-      <SidebarContent>
+      <SidebarContent className="flex-1">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs text-gray-500 uppercase tracking-wide">
+          <SidebarGroupLabel className="text-xs text-gray-500 uppercase tracking-wide px-3 py-2">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -109,17 +107,22 @@ export default function AdminSidebar() {
                       asChild
                       isActive={isActive}
                       className={cn(
-                        "transition-colors duration-200 hover:bg-blue-50 hover:text-blue-600",
+                        "transition-all duration-200 hover:bg-blue-50 hover:text-blue-600",
                         isActive && "bg-blue-100 text-blue-600 font-medium"
                       )}
                     >
-                      <Link
-                        href={item.href}
-                        className="flex items-center gap-2"
-                      >
-                        <Icon className="h-5 w-5" />
-                        <span>{item.name}</span>
-                      </Link>
+                      <Link href={item.href} className="flex items-center gap-3.5 px-3 py-2.5">
+  <div
+    className={cn(
+      "p-2 rounded-md transition-all",
+      isActive ? "bg-white text-blue-600 shadow" : "text-gray-600"
+    )}
+  >
+    <Icon className="h-6 w-6" />
+  </div>
+  <span className="text-base font-medium">{item.name}</span>
+</Link>
+
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -130,19 +133,19 @@ export default function AdminSidebar() {
       </SidebarContent>
 
       {/* Account Footer */}
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-gray-100">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="cursor-pointer flex items-center justify-between w-full px-3 py-2 hover:bg-gray-100 transition">
+                <SidebarMenuButton className="cursor-pointer flex items-center justify-between w-full px-3 py-2 hover:bg-gray-50 transition-colors duration-200">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-indigo-600 text-white text-xs font-medium">
                         {getInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">{displayName}</span>
+                    <span className="text-sm font-medium">{displayName}</span>
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -150,7 +153,7 @@ export default function AdminSidebar() {
               <DropdownMenuContent
                 side="right"
                 align="start"
-                className="w-48 mt-2 ml-3"
+                className="w-48 mt-2 ml-3 shadow-md"
               >
                 <DropdownMenuItem asChild>
                   <Link

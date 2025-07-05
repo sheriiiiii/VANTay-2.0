@@ -123,3 +123,123 @@ export async function DELETE(request: Request) {
     )
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    console.log("=== PUT /api/admin/tickets ===")
+    const { searchParams } = new URL(request.url)
+    const ticketIdParam = searchParams.get("id")
+
+    if (!ticketIdParam) {
+      return NextResponse.json({ error: "Ticket ID is required" }, { status: 400 })
+    }
+
+    const ticketId = Number.parseInt(ticketIdParam, 10)
+    if (isNaN(ticketId)) {
+      return NextResponse.json({ error: "Invalid ticket ID format" }, { status: 400 })
+    }
+
+    const body = await request.json()
+    console.log("Update request body:", body)
+
+    // Validate required fields
+    const { passengerName, passengerPhone, paymentStatus } = body
+
+    if (!passengerName || !passengerPhone || !paymentStatus) {
+      return NextResponse.json(
+        { error: "Missing required fields: passengerName, passengerPhone, paymentStatus" },
+        { status: 400 },
+      )
+    }
+
+    // Validate payment status
+    const validPaymentStatuses = ["PENDING", "PAID", "FAILED", "REFUNDED"]
+    if (!validPaymentStatuses.includes(paymentStatus)) {
+      return NextResponse.json(
+        { error: `Invalid payment status. Must be one of: ${validPaymentStatuses.join(", ")}` },
+        { status: 400 },
+      )
+    }
+
+    // Check if ticket exists
+    const existingTicket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        trip: {
+          include: {
+            route: true,
+          },
+        },
+        seat: true,
+      },
+    })
+
+    if (!existingTicket) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
+    }
+
+    console.log("Found ticket to update:", {
+      id: existingTicket.id,
+      ticketNumber: existingTicket.ticketNumber,
+      currentPaymentStatus: existingTicket.paymentStatus,
+    })
+
+    // Update the ticket
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        passengerName: passengerName.trim(),
+        passengerPhone: passengerPhone.trim(),
+        paymentStatus,
+        // Update ticket status based on payment status
+        ticketStatus: paymentStatus === "PAID" ? "ACTIVE" : existingTicket.ticketStatus,
+      },
+      include: {
+        trip: {
+          include: {
+            route: true,
+          },
+        },
+        seat: true,
+      },
+    })
+
+    console.log("Successfully updated ticket:", {
+      id: updatedTicket.id,
+      ticketNumber: updatedTicket.ticketNumber,
+      newPaymentStatus: updatedTicket.paymentStatus,
+    })
+
+    // Return formatted response
+    const formattedTicket = {
+      id: updatedTicket.id,
+      ticketNumber: updatedTicket.ticketNumber,
+      passenger: updatedTicket.passengerName,
+      contactNumber: updatedTicket.passengerPhone,
+      route: updatedTicket.trip.route.name,
+      date: new Date(updatedTicket.trip.tripDate).toLocaleDateString(),
+      time: updatedTicket.trip.arrivalTime || "N/A",
+      seat: updatedTicket.seat.seatNumber,
+      payment: updatedTicket.paymentStatus,
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Ticket updated successfully",
+      ticket: formattedTicket,
+    })
+  } catch (error) {
+    console.error("[PUT /api/admin/tickets] Error:", error)
+    console.error("Error type:", typeof error)
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace")
+
+    return NextResponse.json(
+      {
+        error: "Failed to update ticket",
+        details: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    )
+  }
+}
