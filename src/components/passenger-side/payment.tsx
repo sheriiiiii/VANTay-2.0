@@ -1,4 +1,3 @@
-//VANTay-2.0\src\components\passenger-side\payment.tsx
 
 "use client"
 
@@ -128,7 +127,7 @@ export default function Payment() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-100 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <Button onClick={() => router.push("/passenger/trips")}>Back to Trips</Button>
@@ -139,7 +138,7 @@ export default function Payment() {
 
   if (!ticketData) {
     return (
-      <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-100 flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
           <span>Loading payment information...</span>
@@ -151,14 +150,14 @@ export default function Payment() {
   const discountInfo = getDiscountInfo()
 
   return (
-    <div className="min-h-screen bg-gradient-to-b via-gray-100 from-indigo-300 px-4 py-6">
+    <div className="min-h-screen bg-blue-100 px-4 py-6">
       {/* Header */}
       <div className="flex items-center mb-12">
         <button onClick={handleBack} className="mr-4" disabled={isProcessing} aria-label="Go back">
           <ArrowLeft className="h-6 w-6 text-gray-900" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payment</h1>
+          <h1 className="text-2xl font-bold text-gray-700">Payment</h1>
           <p className="text-sm text-gray-600">
             {ticketData.trip.route} • Seat {ticketData.seat.seatNumber}
           </p>
@@ -193,7 +192,7 @@ export default function Payment() {
           onClick={handlePayAtCounter}
           disabled={isProcessing}
           variant="outline"
-          className="w-full h-14 text-lg font-medium border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded-lg bg-transparent"
+          className="w-full h-14 text-lg font-medium border-0 shadow-gray-500 hover:border-cyan-800 hover:bg-cyan-800 rounded-lg bg-cyan-700"
         >
           {isProcessing ? (
             <div className="flex items-center gap-2">
@@ -201,8 +200,8 @@ export default function Payment() {
               Processing...
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
+            <div className="flex items-center gap-2 text-white ">
+              <MapPin className="h-5 w-5 text-white" />
               Pay at the Counter
             </div>
           )}

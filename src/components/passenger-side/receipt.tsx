@@ -170,21 +170,20 @@ export default function ReceiptPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
+    <div className="min-h-screen bg-blue-100 px-4 py-6">
       {/* Header */}
       <div className="flex items-center mb-8">
         <button onClick={handleBack} className="mr-4" aria-label="Go back">
           <ArrowLeft className="h-6 w-6 text-gray-900" />
         </button>
-        <h1 className="text-xl font-bold text-gray-900">E-Ticket Generated!</h1>
+        <h1 className="text-2xl font-bold text-gray-700">E-Ticket Generated!</h1>
       </div>
 
       {/* Instructions */}
       <div className="text-center mb-8">
         <p className="text-gray-600 text-sm">Please proceed to the counter and present this ticket.</p>
-        <p className="text-gray-500 text-xs mt-1">Total: ₱{ticketData.totalFare.toFixed(2)}</p>
         <div className="mt-2">
-          <span className="inline-block bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded-full font-medium">
+          <span className="inline-block bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded-md font-medium">
             Payment Pending
           </span>
         </div>
@@ -248,7 +247,7 @@ export default function ReceiptPage() {
             {/* Instructions */}
             <div className="mt-4 relative z-10">
               <p className="text-xs text-gray-500">Present this QR code at the counter</p>
-              <p className="text-xs text-gray-500">Total: ₱{ticketData.totalFare.toFixed(2)}</p>
+              <p className="text-lg text-gray-500">Total: ₱{ticketData.totalFare.toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>
@@ -258,7 +257,7 @@ export default function ReceiptPage() {
       <div className="max-w-sm mx-auto">
         <Button
           onClick={handleBackToHome}
-          className="w-full bg-slate-800 hover:bg-slate-900 text-white rounded-2xl h-12 font-medium"
+          className="w-full bg-cyan-800 hover:bg-cyan-900 text-white rounded-lg h-12 font-medium"
         >
           <Home className="h-5 w-5 mr-2" />
           Back to Home
