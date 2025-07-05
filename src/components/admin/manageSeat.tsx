@@ -1,11 +1,12 @@
 "use client"
+
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Home, ArrowLeft, Loader2, User, MapPin, Calendar, Download } from "lucide-react"
+import { Home, ArrowLeft, Loader2, User, MapPin, Calendar, Download, Filter, CalendarDays } from "lucide-react"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
 import { Separator } from "@/components/ui/separator"
@@ -74,6 +75,7 @@ interface PassengerData {
 }
 
 type ViewState = "trips" | "seats" | "passenger-info" | "payment" | "receipt"
+type DateFilter = "today" | "tomorrow" | "custom" | "all"
 
 export default function ManageSeat() {
   const [currentView, setCurrentView] = useState<ViewState>("trips")
@@ -84,6 +86,11 @@ export default function ManageSeat() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Date filtering states
+  const [dateFilter, setDateFilter] = useState<DateFilter>("today")
+  const [customDate, setCustomDate] = useState<string>("")
+  const [showFilters, setShowFilters] = useState(false)
 
   interface CreatedTicket {
     ticketNumber: string
@@ -103,7 +110,6 @@ export default function ManageSeat() {
   }
 
   const [createdTicket, setCreatedTicket] = useState<CreatedTicket | null>(null)
-
   const [passengerData, setPassengerData] = useState<PassengerData>({
     name: "",
     address: "",
@@ -114,15 +120,37 @@ export default function ManageSeat() {
     paymentMethod: "CASH",
   })
 
-  // Fetch trips on component mount
+  // Fetch trips on component mount and when date filter changes
   useEffect(() => {
     fetchTrips()
-  }, [])
+  }, [dateFilter, customDate])
+
+  const getDateForFilter = (): string | null => {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    switch (dateFilter) {
+      case "today":
+        return today.toISOString().split("T")[0] // Always send today's date
+      case "tomorrow":
+        return tomorrow.toISOString().split("T")[0]
+      case "custom":
+        return customDate || null
+      case "all":
+        return null // No date parameter = all trips
+      default:
+        return today.toISOString().split("T")[0] // Default to today
+    }
+  }
 
   const fetchTrips = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/admin/seats/trips")
+      setError(null)
+      const filterDate = getDateForFilter()
+      const url = filterDate ? `/api/admin/seats/trips?date=${filterDate}` : `/api/admin/seats/trips`
+      const response = await fetch(url)
       if (!response.ok) throw new Error("Failed to fetch trips")
       const data = await response.json()
       setTrips(data)
@@ -168,6 +196,7 @@ export default function ManageSeat() {
 
   const handlePaymentConfirm = async () => {
     if (!selectedTrip || !selectedSeat) return
+
     setIsSubmitting(true)
     setError(null)
 
@@ -358,6 +387,21 @@ export default function ManageSeat() {
     setError(null)
   }
 
+  const getFilterDisplayText = () => {
+    switch (dateFilter) {
+      case "today":
+        return "Today's Trips"
+      case "tomorrow":
+        return "Tomorrow's Trips"
+      case "custom":
+        return customDate ? `Trips for ${new Date(customDate).toLocaleDateString()}` : "Custom Date"
+      case "all":
+        return "All Trips"
+      default:
+        return "Today's Trips"
+    }
+  }
+
   if (loading && currentView === "trips") {
     return (
       <SidebarProvider>
@@ -397,52 +441,143 @@ export default function ManageSeat() {
           {/* Trip Selection View */}
           {currentView === "trips" && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Select a Trip</h2>
-                <p className="text-gray-600 mb-6">Choose a trip to manage seat assignments</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Trip Management</h2>
+                  <p className="text-gray-600">{getFilterDisplayText()}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center space-x-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Filter Trips</span>
+                </Button>
               </div>
 
-              <div className="grid gap-4">
-                {trips.map((trip) => (
-                  <Card
-                    key={trip.id}
-                    className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 border-0 cursor-pointer"
-                    onClick={() => handleTripSelect(trip)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{trip.route}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4" />
-                              Van: {trip.van.plateNumber}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              {new Date(trip.tripDate).toLocaleDateString()}
-                            </span>
-                            <span>Time: {trip.arrivalTime}</span>
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm">
-                            <span className="text-green-600">Available: {trip.availableSeats}</span>
-                            <span className="text-red-600">Occupied: {trip.occupiedSeats}</span>
-                            <span className="text-gray-600">Total: {trip.totalSeats}</span>
-                          </div>
-                          {trip.driverName && (
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <User className="h-4 w-4" />
-                              Driver: {trip.driverName}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-gray-500">Click to manage seats</div>
-                        </div>
+              {/* Date Filter Controls */}
+              {showFilters && (
+                <Card className="bg-white shadow-md border-0">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter by Date</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <Button
+                        variant={dateFilter === "today" ? "default" : "outline"}
+                        onClick={() => setDateFilter("today")}
+                        className="flex items-center space-x-2"
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        <span>Today</span>
+                      </Button>
+                      <Button
+                        variant={dateFilter === "tomorrow" ? "default" : "outline"}
+                        onClick={() => setDateFilter("tomorrow")}
+                        className="flex items-center space-x-2"
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        <span>Tomorrow</span>
+                      </Button>
+                      <Button
+                        variant={dateFilter === "all" ? "default" : "outline"}
+                        onClick={() => setDateFilter("all")}
+                        className="flex items-center space-x-2"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        <span>All Trips</span>
+                      </Button>
+                      <Button
+                        variant={dateFilter === "custom" ? "default" : "outline"}
+                        onClick={() => setDateFilter("custom")}
+                        className="flex items-center space-x-2"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        <span>Custom Date</span>
+                      </Button>
+                    </div>
+                    {dateFilter === "custom" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="customDate" className="text-gray-700 font-medium">
+                          Select Date
+                        </Label>
+                        <Input
+                          id="customDate"
+                          type="date"
+                          value={customDate}
+                          onChange={(e) => setCustomDate(e.target.value)}
+                          className="bg-gray-50 border-gray-200 max-w-xs"
+                        />
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Trips List */}
+              <div className="grid gap-4">
+                {trips.length === 0 ? (
+                  <Card className="bg-white shadow-md border-0">
+                    <CardContent className="p-8 text-center">
+                      <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trips Found</h3>
+                      <p className="text-gray-600">
+                        {dateFilter === "today"
+                          ? "No trips scheduled for today."
+                          : dateFilter === "tomorrow"
+                            ? "No trips scheduled for tomorrow."
+                            : dateFilter === "custom" && customDate
+                              ? `No trips found for ${new Date(customDate).toLocaleDateString()}.`
+                              : "No trips found for the selected criteria."}
+                      </p>
+                      {dateFilter !== "all" && (
+                        <Button variant="outline" onClick={() => setDateFilter("all")} className="mt-4">
+                          View All Trips
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
+                ) : (
+                  trips.map((trip) => (
+                    <Card
+                      key={trip.id}
+                      className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 border-0 cursor-pointer"
+                      onClick={() => handleTripSelect(trip)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-semibold text-gray-900">{trip.route}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4" />
+                                Van: {trip.van.plateNumber}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {new Date(trip.tripDate).toLocaleDateString()}
+                              </span>
+                              <span>Time: {trip.arrivalTime}</span>
+                            </div>
+                            <div className="flex items-center space-x-4 text-sm">
+                              <span className="text-green-600">Available: {trip.availableSeats}</span>
+                              <span className="text-red-600">Occupied: {trip.occupiedSeats}</span>
+                              <span className="text-gray-600">Total: {trip.totalSeats}</span>
+                            </div>
+                            {trip.driverName && (
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <User className="h-4 w-4" />
+                                Driver: {trip.driverName}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-500">Click to manage seats</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -854,7 +989,7 @@ export default function ManageSeat() {
             </div>
           )}
 
-          {/* Receipt/Ticket View - Updated Design */}
+          {/* Receipt/Ticket View */}
           {currentView === "receipt" && createdTicket && (
             <div className="space-y-6 max-w-sm mx-auto">
               <div className="text-center">

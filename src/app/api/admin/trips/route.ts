@@ -1,9 +1,40 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const dateParam = searchParams.get("date")
+
+    console.log("=== ADMIN: FETCHING TRIPS ===")
+    console.log("Date filter:", dateParam)
+
+    // Build where clause
+    const whereClause: any = {}
+
+    // Add date filtering ONLY if date parameter is provided
+    if (dateParam) {
+      // Parse the date and create start/end of day
+      const targetDate = new Date(dateParam)
+      const startOfDay = new Date(targetDate)
+      startOfDay.setHours(0, 0, 0, 0)
+
+      const endOfDay = new Date(targetDate)
+      endOfDay.setHours(23, 59, 59, 999)
+
+      console.log("Filtering trips between:", startOfDay, "and", endOfDay)
+
+      whereClause.tripDate = {
+        gte: startOfDay,
+        lte: endOfDay,
+      }
+    } else {
+      // No date parameter = show ALL trips (don't add any date filter)
+      console.log("No date filter provided, showing ALL trips")
+    }
+
     const trips = await prisma.trip.findMany({
+      where: whereClause,
       include: {
         van: true,
         route: true,
@@ -12,6 +43,8 @@ export async function GET() {
         tripDate: "asc",
       },
     })
+
+    console.log("Found trips:", trips.length)
     return NextResponse.json(trips)
   } catch (error) {
     console.error("Failed to fetch trips:", error)
