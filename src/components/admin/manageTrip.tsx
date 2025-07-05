@@ -1,10 +1,11 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Settings, Filter, ArrowUpDown, Edit, Trash2, Users } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Settings, Filter, ArrowUpDown, Edit, Trash2, Users, Download, Calendar, CalendarDays } from "lucide-react"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
 import { Separator } from "@/components/ui/separator"
@@ -30,6 +31,7 @@ interface Trip {
   driverName?: string
   driverPhone?: string
   status?: string
+  arrivalTime?: string
   van: {
     id: number
     plateNumber: string
@@ -38,8 +40,37 @@ interface Trip {
   route: {
     id: number
     name: string
+    origin: string
+    destination: string
   }
 }
+
+interface ManifestData {
+  tripInfo: {
+    vanNumber: string
+    driver: string
+    route: string
+    tripDate: string
+    arrivalTime?: string
+  }
+  passengers: Array<{
+    number: number
+    seatNumber: string
+    passengerName: string
+    age: number
+    address: string
+    contactNumber: string
+    emergencyContact: string
+    paymentStatus: string
+  }>
+  summary: {
+    totalPassengers: number
+    totalSeats: number
+    availableSeats: number
+  }
+}
+
+type DateFilter = "today" | "tomorrow" | "custom" | "all"
 
 // Status badge component
 function TripStatusBadge({ status }: { status: string }) {
@@ -61,7 +92,6 @@ function TripStatusBadge({ status }: { status: string }) {
   }
 
   const config = getStatusConfig(status)
-
   return (
     <Badge variant={config.variant} className={config.className}>
       {status}
@@ -75,12 +105,45 @@ export default function ManageTrip() {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [generatingManifest, setGeneratingManifest] = useState<number | null>(null)
+
+  // Date filtering states
+  const [dateFilter, setDateFilter] = useState<DateFilter>("today")
+  const [customDate, setCustomDate] = useState<string>("")
+  const [showFilters, setShowFilters] = useState(false)
+
+  const getDateForFilter = (): string | null => {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    switch (dateFilter) {
+      case "today":
+        return today.toISOString().split("T")[0] // Always send today's date
+      case "tomorrow":
+        return tomorrow.toISOString().split("T")[0]
+      case "custom":
+        return customDate || null
+      case "all":
+        return null // No date parameter = all trips
+      default:
+        return today.toISOString().split("T")[0] // Default to today
+    }
+  }
 
   const fetchTrips = async () => {
     try {
-      const res = await fetch("/api/admin/trips")
+      setLoading(true)
+      const filterDate = getDateForFilter()
+      const url = filterDate ? `/api/admin/trips?date=${filterDate}` : `/api/admin/trips`
+
+      console.log("Fetching trips with URL:", url) // Debug log
+
+      const res = await fetch(url)
       if (!res.ok) throw new Error("Failed to fetch trips")
       const data = await res.json()
+
+      console.log("Received trips:", data.length) // Debug log
       setTrips(data)
     } catch (error) {
       console.error("Error fetching trips:", error)
@@ -120,6 +183,106 @@ export default function ManageTrip() {
     fetchTrips() // Refresh the trips list
   }
 
+  const generatePassengerManifest = async (trip: Trip) => {
+    setGeneratingManifest(trip.id)
+    try {
+      const response = await fetch(`/api/admin/trips/${trip.id}/manifest`)
+      if (!response.ok) {
+        throw new Error("Failed to generate manifest")
+      }
+
+      const manifestData: ManifestData = await response.json()
+
+      // Generate PDF-like content using canvas
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+
+      if (ctx) {
+        // Set canvas size (A4-like proportions)
+        canvas.width = 800
+        canvas.height = 1000
+
+        // Fill background
+        ctx.fillStyle = "#ffffff"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        // Header
+        ctx.fillStyle = "#000000"
+        ctx.font = "bold 24px Arial"
+        ctx.textAlign = "center"
+        ctx.fillText("PASSENGER MANIFEST", canvas.width / 2, 40)
+
+        // Trip Information
+        ctx.font = "16px Arial"
+        ctx.textAlign = "left"
+        const startY = 80
+        ctx.fillText(`VAN#: ${manifestData.tripInfo.vanNumber}`, 50, startY)
+        ctx.fillText(`DRIVER: ${manifestData.tripInfo.driver}`, 50, startY + 25)
+        ctx.fillText(`ROUTE: ${manifestData.tripInfo.route}`, 50, startY + 50)
+        ctx.fillText(`DATE: ${new Date(manifestData.tripInfo.tripDate).toLocaleDateString()}`, 50, startY + 75)
+        if (manifestData.tripInfo.arrivalTime) {
+          ctx.fillText(`TIME: ${manifestData.tripInfo.arrivalTime}`, 50, startY + 100)
+        }
+
+        // Table Header
+        const tableStartY = 200
+        ctx.font = "bold 14px Arial"
+        ctx.fillRect(50, tableStartY, 700, 30) // Header background
+        ctx.fillStyle = "#ffffff"
+        ctx.fillText("#", 60, tableStartY + 20)
+        ctx.fillText("PASSENGER'S NAME", 100, tableStartY + 20)
+        ctx.fillText("AGE", 300, tableStartY + 20)
+        ctx.fillText("ADDRESS", 350, tableStartY + 20)
+        ctx.fillText("CONTACT #", 550, tableStartY + 20)
+        ctx.fillText("EMERGENCY", 650, tableStartY + 20)
+
+        // Table Content
+        ctx.fillStyle = "#000000"
+        ctx.font = "12px Arial"
+        manifestData.passengers.forEach((passenger, index) => {
+          const rowY = tableStartY + 50 + index * 25
+          // Draw row border
+          ctx.strokeRect(50, rowY - 15, 700, 25)
+
+          ctx.fillText(passenger.number.toString(), 60, rowY)
+          ctx.fillText(passenger.passengerName, 100, rowY)
+          ctx.fillText(passenger.age.toString(), 300, rowY)
+          ctx.fillText(passenger.address, 350, rowY)
+          ctx.fillText(passenger.contactNumber, 550, rowY)
+          ctx.fillText(passenger.emergencyContact, 650, rowY)
+        })
+
+        // Summary
+        const summaryY = tableStartY + 50 + manifestData.passengers.length * 25 + 50
+        ctx.font = "bold 14px Arial"
+        ctx.fillText(`Total Passengers: ${manifestData.summary.totalPassengers}`, 50, summaryY)
+        ctx.fillText(`Available Seats: ${manifestData.summary.availableSeats}`, 50, summaryY + 25)
+        ctx.fillText(`Van Capacity: ${manifestData.summary.totalSeats}`, 50, summaryY + 50)
+
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = `passenger-manifest-${manifestData.tripInfo.vanNumber}-${new Date(manifestData.tripInfo.tripDate).toISOString().split("T")[0]}.png`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+          }
+        })
+
+        toast.success("Passenger manifest generated successfully!")
+      }
+    } catch (error) {
+      console.error("Error generating manifest:", error)
+      toast.error("Failed to generate passenger manifest")
+    } finally {
+      setGeneratingManifest(null)
+    }
+  }
+
   // Helper function to get seat status color
   const getSeatStatusColor = (available: number, total: number) => {
     const percentage = (available / total) * 100
@@ -128,9 +291,24 @@ export default function ManageTrip() {
     return "text-red-600"
   }
 
+  const getFilterDisplayText = () => {
+    switch (dateFilter) {
+      case "today":
+        return "Today's Trips"
+      case "tomorrow":
+        return "Tomorrow's Trips"
+      case "custom":
+        return customDate ? `Trips for ${new Date(customDate).toLocaleDateString()}` : "Custom Date"
+      case "all":
+        return "All Trips"
+      default:
+        return "Today's Trips"
+    }
+  }
+
   useEffect(() => {
     fetchTrips()
-  }, [])
+  }, [dateFilter, customDate])
 
   return (
     <SidebarProvider>
@@ -146,17 +324,83 @@ export default function ManageTrip() {
         </header>
 
         <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)]">
-          <div className="mb-4">
-            <p className="text-gray-600">Manage scheduled trips and availability</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-gray-600">Manage scheduled trips and availability</p>
+              <p className="text-sm text-gray-500">{getFilterDisplayText()}</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2"
+            >
+              <Filter className="h-4 w-4" />
+              <span>Filter Trips</span>
+            </Button>
           </div>
+
+          {/* Date Filter Controls */}
+          {showFilters && (
+            <Card className="bg-white shadow-md border-0 mb-6">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Filter by Date</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <Button
+                    variant={dateFilter === "today" ? "default" : "outline"}
+                    onClick={() => setDateFilter("today")}
+                    className="flex items-center space-x-2"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    <span>Today</span>
+                  </Button>
+                  <Button
+                    variant={dateFilter === "tomorrow" ? "default" : "outline"}
+                    onClick={() => setDateFilter("tomorrow")}
+                    className="flex items-center space-x-2"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    <span>Tomorrow</span>
+                  </Button>
+                  <Button
+                    variant={dateFilter === "all" ? "default" : "outline"}
+                    onClick={() => setDateFilter("all")}
+                    className="flex items-center space-x-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    <span>All Trips</span>
+                  </Button>
+                  <Button
+                    variant={dateFilter === "custom" ? "default" : "outline"}
+                    onClick={() => setDateFilter("custom")}
+                    className="flex items-center space-x-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    <span>Custom Date</span>
+                  </Button>
+                </div>
+
+                {dateFilter === "custom" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="customDate" className="text-gray-700 font-medium">
+                      Select Date
+                    </Label>
+                    <Input
+                      id="customDate"
+                      type="date"
+                      value={customDate}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      className="bg-gray-50 border-gray-200 max-w-xs"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Action Bar */}
           <div className="flex items-center justify-between mb-6">
             <CreateTripModal onTripCreated={fetchTrips} />
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
-                <Filter className="h-4 w-4" />
-              </Button>
               <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
                 <ArrowUpDown className="h-4 w-4" />
               </Button>
@@ -170,7 +414,24 @@ export default function ManageTrip() {
                 {loading ? (
                   <p className="p-4 text-gray-600">Loading trips...</p>
                 ) : trips.length === 0 ? (
-                  <p className="p-4 text-gray-500">No trips scheduled yet.</p>
+                  <div className="p-8 text-center">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trips Found</h3>
+                    <p className="text-gray-600">
+                      {dateFilter === "today"
+                        ? "No trips scheduled for today."
+                        : dateFilter === "tomorrow"
+                          ? "No trips scheduled for tomorrow."
+                          : dateFilter === "custom" && customDate
+                            ? `No trips found for ${new Date(customDate).toLocaleDateString()}.`
+                            : "No trips found for the selected criteria."}
+                    </p>
+                    {dateFilter !== "all" && (
+                      <Button variant="outline" onClick={() => setDateFilter("all")} className="mt-4">
+                        View All Trips
+                      </Button>
+                    )}
+                  </div>
                 ) : (
                   <table className="w-full">
                     <thead>
@@ -217,6 +478,16 @@ export default function ManageTrip() {
                           <td className="py-4 px-6 text-gray-900">{trip.driverPhone || "-"}</td>
                           <td className="py-4 px-6">
                             <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                onClick={() => generatePassengerManifest(trip)}
+                                disabled={generatingManifest === trip.id}
+                                title="Generate Passenger Manifest"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
