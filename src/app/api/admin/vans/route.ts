@@ -20,7 +20,6 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
     })
-
     return NextResponse.json(vans)
   } catch (error) {
     console.error("Error fetching vans:", error)
@@ -32,10 +31,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { plateNumber, capacity, model, routeId } = body
+    const { plateNumber, capacity, model, routeId, status = "ACTIVE" } = body
 
     if (!plateNumber || !capacity || !model || !routeId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Validate status
+    const validStatuses = ["ACTIVE", "MAINTENANCE", "INACTIVE"]
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid van status" }, { status: 400 })
     }
 
     // Check if route exists
@@ -54,6 +59,7 @@ export async function POST(request: NextRequest) {
           capacity,
           model,
           routeId: existingRoute.id,
+          status,
         },
         include: { route: true },
       })

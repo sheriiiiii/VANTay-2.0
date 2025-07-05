@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +28,7 @@ type TicketType = {
   time: string
   seat: string
   payment: string
+  status: string
 }
 
 interface EditTicketModalProps {
@@ -36,22 +36,41 @@ interface EditTicketModalProps {
   onTicketUpdated: () => void
 }
 
+const PAYMENT_STATUSES = [
+  { value: "PENDING", label: "Pending" },
+  { value: "PAID", label: "Paid" },
+  { value: "FAILED", label: "Failed" },
+  { value: "REFUNDED", label: "Refunded" },
+]
+
+const TICKET_STATUSES = [
+  { value: "ACTIVE", label: "Active" },
+  { value: "USED", label: "Used" },
+  { value: "CANCELLED", label: "Cancelled" },
+  { value: "EXPIRED", label: "Expired" },
+]
+
 export default function EditTicketModal({ ticket, onTicketUpdated }: EditTicketModalProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    passengerName: ticket.passenger,
-    passengerPhone: ticket.contactNumber,
-    paymentStatus: ticket.payment,
+    passengerName: ticket.passenger || "",
+    passengerPhone: ticket.contactNumber || "",
+    paymentStatus: ticket.payment || "PENDING",
+    ticketStatus: ticket.status || "ACTIVE",
   })
+
+  // Add debugging
+  console.log("EditTicketModal rendered with ticket:", ticket)
+  console.log("Form data initialized:", formData)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("Form submitted with data:", formData) // Add this debug line
     setLoading(true)
 
     try {
       console.log("Updating ticket:", ticket.id, formData)
-
       const response = await fetch(`/api/admin/tickets?id=${ticket.id}`, {
         method: "PUT",
         headers: {
@@ -67,7 +86,6 @@ export default function EditTicketModal({ ticket, onTicketUpdated }: EditTicketM
 
       const result = await response.json()
       console.log("Update success:", result)
-
       toast.success("Ticket updated successfully")
       setOpen(false)
       onTicketUpdated()
@@ -87,10 +105,38 @@ export default function EditTicketModal({ ticket, onTicketUpdated }: EditTicketM
     }))
   }
 
+  const handleClose = () => {
+    console.log("Modal closing") // Add debug line
+    setOpen(false)
+    // Reset form data when closing
+    setFormData({
+      passengerName: ticket.passenger || "",
+      passengerPhone: ticket.contactNumber || "",
+      paymentStatus: ticket.payment || "PENDING",
+      ticketStatus: ticket.status || "ACTIVE",
+    })
+  }
+
+  const handleOpenChange = (newOpen: boolean) => {
+    console.log("Modal open state changing to:", newOpen) // Add debug line
+    setOpen(newOpen)
+    if (!newOpen) {
+      handleClose()
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" title="Edit ticket">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+          title="Edit ticket"
+          onClick={() => {
+            console.log("Edit button clicked for ticket:", ticket.id) // Add debug line
+          }}
+        >
           <Edit className="h-4 w-4" />
         </Button>
       </DialogTrigger>
@@ -98,7 +144,7 @@ export default function EditTicketModal({ ticket, onTicketUpdated }: EditTicketM
         <DialogHeader>
           <DialogTitle>Edit Ticket</DialogTitle>
           <DialogDescription>
-            Update passenger information and payment status for ticket #{ticket.ticketNumber}
+            Update passenger information, payment status, and ticket status for ticket #{ticket.ticketNumber}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -107,14 +153,17 @@ export default function EditTicketModal({ ticket, onTicketUpdated }: EditTicketM
               <Label htmlFor="ticketNumber">Ticket Number</Label>
               <Input id="ticketNumber" value={ticket.ticketNumber} disabled className="bg-gray-50" />
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="route">Route</Label>
               <Input id="route" value={ticket.route} disabled className="bg-gray-50" />
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="seat">Seat</Label>
               <Input id="seat" value={ticket.seat} disabled className="bg-gray-50" />
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="passengerName">Passenger Name</Label>
               <Input
@@ -122,9 +171,11 @@ export default function EditTicketModal({ ticket, onTicketUpdated }: EditTicketM
                 value={formData.passengerName}
                 onChange={(e) => handleInputChange("passengerName", e.target.value)}
                 placeholder="Enter passenger name"
+                disabled={loading}
                 required
               />
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="passengerPhone">Contact Number</Label>
               <Input
@@ -132,29 +183,53 @@ export default function EditTicketModal({ ticket, onTicketUpdated }: EditTicketM
                 value={formData.passengerPhone}
                 onChange={(e) => handleInputChange("passengerPhone", e.target.value)}
                 placeholder="Enter contact number"
+                disabled={loading}
                 required
               />
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="paymentStatus">Payment Status</Label>
               <Select
                 value={formData.paymentStatus}
                 onValueChange={(value) => handleInputChange("paymentStatus", value)}
+                disabled={loading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select payment status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="FAILED">Failed</SelectItem>
-                  <SelectItem value="REFUNDED">Refunded</SelectItem>
+                  {PAYMENT_STATUSES.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="ticketStatus">Ticket Status</Label>
+              <Select
+                value={formData.ticketStatus}
+                onValueChange={(value) => handleInputChange("ticketStatus", value)}
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select ticket status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TICKET_STATUSES.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>

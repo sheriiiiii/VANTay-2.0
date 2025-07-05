@@ -13,17 +13,18 @@ import type {
   TicketStatus,
 } from "@prisma/client"
 
-// Extended types with relations
 export interface VanWithRoute {
   id: number
   plateNumber: string
-  model: string 
+  model: string
   capacity: number
+  status?: VanStatus | string
   route: {
     id: number
     name: string
   } | null
 }
+
 
 
 export type TripWithRelations = Trip & {

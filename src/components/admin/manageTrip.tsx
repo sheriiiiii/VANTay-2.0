@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Settings, Filter, ArrowUpDown, Edit, Trash2, Users } from "lucide-react"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
@@ -28,6 +29,7 @@ interface Trip {
   availableSeats: number
   driverName?: string
   driverPhone?: string
+  status?: string
   van: {
     id: number
     plateNumber: string
@@ -37,6 +39,34 @@ interface Trip {
     id: number
     name: string
   }
+}
+
+// Status badge component
+function TripStatusBadge({ status }: { status: string }) {
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "SCHEDULED":
+        return { variant: "secondary" as const, className: "bg-blue-100 text-blue-800 hover:bg-blue-100" }
+      case "BOARDING":
+        return { variant: "default" as const, className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100" }
+      case "DEPARTED":
+        return { variant: "default" as const, className: "bg-purple-100 text-purple-800 hover:bg-purple-100" }
+      case "COMPLETED":
+        return { variant: "default" as const, className: "bg-green-100 text-green-800 hover:bg-green-100" }
+      case "CANCELLED":
+        return { variant: "destructive" as const, className: "bg-red-100 text-red-800 hover:bg-red-100" }
+      default:
+        return { variant: "outline" as const, className: "" }
+    }
+  }
+
+  const config = getStatusConfig(status)
+
+  return (
+    <Badge variant={config.variant} className={config.className}>
+      {status}
+    </Badge>
+  )
 }
 
 export default function ManageTrip() {
@@ -149,6 +179,7 @@ export default function ManageTrip() {
                         <th className="text-left py-4 px-6 font-semibold text-gray-900">Route</th>
                         <th className="text-left py-4 px-6 font-semibold text-gray-900">Date</th>
                         <th className="text-left py-4 px-6 font-semibold text-gray-900">Seats</th>
+                        <th className="text-left py-4 px-6 font-semibold text-gray-900">Status</th>
                         <th className="text-left py-4 px-6 font-semibold text-gray-900">Driver</th>
                         <th className="text-left py-4 px-6 font-semibold text-gray-900">Phone</th>
                         <th className="text-left py-4 px-6 font-semibold text-gray-900">Actions</th>
@@ -179,6 +210,9 @@ export default function ManageTrip() {
                               </span>
                             </div>
                           </td>
+                          <td className="py-4 px-6">
+                            <TripStatusBadge status={trip.status || "SCHEDULED"} />
+                          </td>
                           <td className="py-4 px-6 text-gray-900">{trip.driverName || "-"}</td>
                           <td className="py-4 px-6 text-gray-900">{trip.driverPhone || "-"}</td>
                           <td className="py-4 px-6">
@@ -207,24 +241,35 @@ export default function ManageTrip() {
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Delete Trip</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this trip? This action cannot be undone.
-                                      <br />
-                                      <br />
-                                      <strong>Trip Details:</strong>
-                                      <br />
-                                      Van: {trip.van.plateNumber}
-                                      <br />
-                                      Route: {trip.route.name}
-                                      <br />
-                                      Date:{" "}
-                                      {new Date(trip.tripDate).toLocaleDateString("en-PH", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                      })}
-                                      <br />
-                                      Seats: {trip.availableSeats}/{trip.van.capacity}
+                                    <AlertDialogDescription asChild>
+                                      <div className="space-y-3">
+                                        <div>
+                                          Are you sure you want to delete this trip? This action cannot be undone.
+                                        </div>
+                                        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md space-y-1">
+                                          <div>
+                                            <strong>Van:</strong> {trip.van.plateNumber}
+                                          </div>
+                                          <div>
+                                            <strong>Route:</strong> {trip.route.name}
+                                          </div>
+                                          <div>
+                                            <strong>Date:</strong>{" "}
+                                            {new Date(trip.tripDate).toLocaleDateString("en-PH", {
+                                              year: "numeric",
+                                              month: "short",
+                                              day: "numeric",
+                                            })}
+                                          </div>
+                                          <div>
+                                            <strong>Seats:</strong> {trip.availableSeats}/{trip.van.capacity}
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <strong>Status:</strong>
+                                            <TripStatusBadge status={trip.status || "SCHEDULED"} />
+                                          </div>
+                                        </div>
+                                      </div>
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>

@@ -7,7 +7,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { tripId: tripIdParam } = await params
     const tripId = Number.parseInt(tripIdParam)
-
     const { seatNumber } = await request.json()
 
     if (isNaN(tripId) || !seatNumber) {
@@ -48,7 +47,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Create a temporary reservation (you might want to implement a reservation system)
     // For now, we'll just return success - the actual ticket creation will happen in passenger-info
-
     return NextResponse.json({
       success: true,
       seatId: seat.id,
