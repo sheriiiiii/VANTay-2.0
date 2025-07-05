@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
 import { Separator } from "@/components/ui/separator"
 import CreateTripModal from "@/components/modals/createTrip"
+import EditTripModal from "@/components/modals/editTrip"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +29,12 @@ interface Trip {
   driverName?: string
   driverPhone?: string
   van: {
+    id: number
     plateNumber: string
+    capacity: number
   }
   route: {
+    id: number
     name: string
   }
 }
@@ -39,6 +43,8 @@ export default function ManageTrip() {
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   const fetchTrips = async () => {
     try {
@@ -60,15 +66,12 @@ export default function ManageTrip() {
       const res = await fetch(`/api/admin/trips?id=${tripId}`, {
         method: "DELETE",
       })
-
       if (!res.ok) {
         const errorData = await res.json()
         throw new Error(errorData.error || "Failed to delete trip")
       }
-
       // Remove the trip from the local state
       setTrips(trips.filter((trip) => trip.id !== tripId))
-
       toast.success("Trip deleted successfully")
     } catch (error) {
       console.error("Error deleting trip:", error)
@@ -76,6 +79,23 @@ export default function ManageTrip() {
     } finally {
       setDeletingId(null)
     }
+  }
+
+  const handleEditTrip = (trip: Trip) => {
+    setEditingTrip(trip)
+    setEditModalOpen(true)
+  }
+
+  const handleTripUpdated = () => {
+    fetchTrips() // Refresh the trips list
+  }
+
+  // Helper function to get seat status color
+  const getSeatStatusColor = (available: number, total: number) => {
+    const percentage = (available / total) * 100
+    if (percentage > 70) return "text-green-600"
+    if (percentage > 30) return "text-yellow-600"
+    return "text-red-600"
   }
 
   useEffect(() => {
@@ -94,10 +114,12 @@ export default function ManageTrip() {
             <h1 className="text-2xl font-semibold text-gray-900">Manage van trips</h1>
           </div>
         </header>
+
         <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)]">
           <div className="mb-4">
             <p className="text-gray-600">Manage scheduled trips and availability</p>
           </div>
+
           {/* Action Bar */}
           <div className="flex items-center justify-between mb-6">
             <CreateTripModal onTripCreated={fetchTrips} />
@@ -110,6 +132,7 @@ export default function ManageTrip() {
               </Button>
             </div>
           </div>
+
           {/* Trips Table */}
           <Card className="bg-white shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl border-0">
             <CardContent className="p-0">
@@ -147,16 +170,26 @@ export default function ManageTrip() {
                             })}
                           </td>
                           <td className="py-4 px-6">
-                            <div className="flex items-center space-x-2 text-gray-900">
-                              <Users className="h-4 w-4" />
-                              <span>{trip.availableSeats}</span>
+                            <div className="flex items-center space-x-2">
+                              <Users className="h-4 w-4 text-gray-500" />
+                              <span
+                                className={`font-medium ${getSeatStatusColor(trip.availableSeats, trip.van.capacity)}`}
+                              >
+                                {trip.availableSeats}/{trip.van.capacity}
+                              </span>
                             </div>
                           </td>
                           <td className="py-4 px-6 text-gray-900">{trip.driverName || "-"}</td>
                           <td className="py-4 px-6 text-gray-900">{trip.driverPhone || "-"}</td>
                           <td className="py-4 px-6">
                             <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                onClick={() => handleEditTrip(trip)}
+                                title="Edit trip"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <AlertDialog>
@@ -166,6 +199,7 @@ export default function ManageTrip() {
                                     size="icon"
                                     className="h-8 w-8 text-red-600 hover:bg-red-50"
                                     disabled={deletingId === trip.id}
+                                    title="Delete trip"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
@@ -189,6 +223,8 @@ export default function ManageTrip() {
                                         month: "short",
                                         day: "numeric",
                                       })}
+                                      <br />
+                                      Seats: {trip.availableSeats}/{trip.van.capacity}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -214,6 +250,14 @@ export default function ManageTrip() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Edit Trip Modal */}
+        <EditTripModal
+          trip={editingTrip}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onUpdated={handleTripUpdated}
+        />
       </SidebarInset>
     </SidebarProvider>
   )

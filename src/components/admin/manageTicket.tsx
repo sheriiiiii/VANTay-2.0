@@ -3,11 +3,11 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Ticket, Filter, ArrowUpDown, Edit, Trash2, RefreshCw } from "lucide-react"
+import { Ticket, Filter, ArrowUpDown, Trash2, RefreshCw } from "lucide-react"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
 import { Separator } from "@/components/ui/separator"
-import CreateTicketModal from "@/components/modals/createTicket"
+import EditTicketModal from "@/components/modals/editTicket"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,25 +44,20 @@ export default function ManageTickets() {
     try {
       setLoading(true)
       setError(null)
-
       console.log("Fetching tickets...")
       const res = await fetch("/api/admin/tickets")
-
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
         throw new Error(`HTTP ${res.status}: ${errorData.error || "Unknown error"}`)
       }
-
       const data = await res.json()
       console.log("Raw API response:", data)
-
       if (Array.isArray(data)) {
         // Log each ticket to see the structure
         data.forEach((ticket, index) => {
           console.log(`Ticket ${index}:`, ticket)
           console.log(`Ticket ${index} ID:`, ticket.id, typeof ticket.id)
         })
-
         setTickets(data)
         console.log(`Successfully loaded ${data.length} tickets`)
       } else {
@@ -83,7 +78,6 @@ export default function ManageTickets() {
 
   const handleDeleteTicket = async (ticketId: number, ticketNumber: string) => {
     console.log("handleDeleteTicket called with:", { ticketId, ticketNumber, type: typeof ticketId })
-
     // Validate the ticket ID
     if (!ticketId || ticketId === undefined || ticketId === null) {
       console.error("Invalid ticket ID - is undefined/null:", ticketId)
@@ -98,20 +92,16 @@ export default function ManageTickets() {
     }
 
     setIsDeleting(ticketId)
-
     try {
       const deleteUrl = `/api/admin/tickets?id=${ticketId}`
       console.log("Making DELETE request to:", deleteUrl)
-
       const res = await fetch(deleteUrl, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
       })
-
       console.log("Delete response status:", res.status)
-
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
         console.error("Delete failed:", errorData)
@@ -120,7 +110,6 @@ export default function ManageTickets() {
 
       const result = await res.json()
       console.log("Delete success:", result)
-
       // Remove the ticket from the local state
       setTickets((prevTickets) => prevTickets.filter((ticket) => ticket.id !== ticketId))
       toast.success("Ticket deleted successfully")
@@ -130,6 +119,21 @@ export default function ManageTickets() {
       toast.error(errorMessage)
     } finally {
       setIsDeleting(null)
+    }
+  }
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "PAID":
+        return "bg-green-100 text-green-800 hover:bg-green-100"
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+      case "FAILED":
+        return "bg-red-100 text-red-800 hover:bg-red-100"
+      case "REFUNDED":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
     }
   }
 
@@ -149,26 +153,13 @@ export default function ManageTickets() {
             <h1 className="text-2xl font-semibold text-gray-900">Manage Tickets</h1>
           </div>
         </header>
-
         <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)]">
           <div className="mb-4">
             <p className="text-gray-600">Generate tickets for passengers</p>
           </div>
-
           {/* Action Bar */}
           <div className="flex items-center justify-between mb-6">
-            <CreateTicketModal />
             <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 bg-transparent"
-                onClick={fetchTickets}
-                disabled={loading}
-                title="Refresh tickets"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              </Button>
               <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
                 <Filter className="h-4 w-4" />
               </Button>
@@ -177,7 +168,6 @@ export default function ManageTickets() {
               </Button>
             </div>
           </div>
-
           {/* Tickets Table */}
           <Card className="bg-white shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl border-0">
             <CardContent className="p-0">
@@ -208,7 +198,6 @@ export default function ManageTickets() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-4 px-4 font-semibold text-gray-900">ID</th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">Ticket Number</th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">Passenger</th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">Contact Number</th>
@@ -224,13 +213,11 @@ export default function ManageTickets() {
                       {tickets.map((ticket) => {
                         // Debug each ticket as it's rendered
                         console.log("Rendering ticket:", ticket.id, ticket.ticketNumber)
-
                         return (
                           <tr
                             key={ticket.id || ticket.ticketNumber}
                             className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                           >
-                            <td className="py-4 px-4 text-gray-900 font-mono text-sm">{ticket.id || "MISSING"}</td>
                             <td className="py-4 px-4 text-gray-900">{ticket.ticketNumber}</td>
                             <td className="py-4 px-4 text-gray-900">{ticket.passenger}</td>
                             <td className="py-4 px-4 text-gray-900">{ticket.contactNumber}</td>
@@ -239,18 +226,11 @@ export default function ManageTickets() {
                             <td className="py-4 px-4 text-gray-900">{ticket.time}</td>
                             <td className="py-4 px-4 text-gray-900">{ticket.seat}</td>
                             <td className="py-4 px-4">
-                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{ticket.payment}</Badge>
+                              <Badge className={getPaymentStatusColor(ticket.payment)}>{ticket.payment}</Badge>
                             </td>
                             <td className="py-4 px-4">
                               <div className="flex items-center space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-blue-600 hover:bg-blue-50"
-                                  title="Edit ticket"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                                <EditTicketModal ticket={ticket} onTicketUpdated={fetchTickets} />
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button
@@ -271,9 +251,6 @@ export default function ManageTickets() {
                                         <br />
                                         <br />
                                         <strong>Ticket Details:</strong>
-                                        <br />
-                                        ID: {ticket.id || "MISSING"}
-                                        <br />
                                         Ticket Number: {ticket.ticketNumber}
                                         <br />
                                         Passenger: {ticket.passenger}
