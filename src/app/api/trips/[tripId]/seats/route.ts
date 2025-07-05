@@ -7,7 +7,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { tripId: tripIdParam } = await params
     const tripId = Number.parseInt(tripIdParam)
-
     console.log("Fetching seats for trip ID:", tripId)
 
     if (isNaN(tripId)) {
@@ -56,10 +55,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Map seats with their status
     const seatsWithStatus = trip.van.seats.map((seat) => {
       let status: "available" | "occupied" | "pending" = "available"
-
       if (seat.tickets.length > 0) {
         const ticket = seat.tickets[0] // Should only be one active ticket per seat per trip
-
         if (ticket.paymentStatus === "PENDING") {
           status = "pending"
         } else if (ticket.paymentStatus === "PAID" || ticket.ticketStatus === "USED") {

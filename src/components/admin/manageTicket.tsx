@@ -32,6 +32,46 @@ type TicketType = {
   time: string
   seat: string
   payment: string
+  status?: string // Make this optional
+}
+
+// Status badge components
+function PaymentStatusBadge({ status }: { status: string }) {
+  const getPaymentStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "PAID":
+        return "bg-green-100 text-green-800 hover:bg-green-100"
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+      case "FAILED":
+        return "bg-red-100 text-red-800 hover:bg-red-100"
+      case "REFUNDED":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
+    }
+  }
+
+  return <Badge className={getPaymentStatusColor(status)}>{status}</Badge>
+}
+
+function TicketStatusBadge({ status }: { status: string }) {
+  const getTicketStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "ACTIVE":
+        return "bg-blue-100 text-blue-800 hover:bg-blue-100"
+      case "USED":
+        return "bg-green-100 text-green-800 hover:bg-green-100"
+      case "CANCELLED":
+        return "bg-red-100 text-red-800 hover:bg-red-100"
+      case "EXPIRED":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
+    }
+  }
+
+  return <Badge className={getTicketStatusColor(status)}>{status}</Badge>
 }
 
 export default function ManageTickets() {
@@ -122,21 +162,6 @@ export default function ManageTickets() {
     }
   }
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "PAID":
-        return "bg-green-100 text-green-800 hover:bg-green-100"
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-      case "FAILED":
-        return "bg-red-100 text-red-800 hover:bg-red-100"
-      case "REFUNDED":
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
-      default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
-    }
-  }
-
   useEffect(() => {
     fetchTickets()
   }, [])
@@ -153,10 +178,12 @@ export default function ManageTickets() {
             <h1 className="text-2xl font-semibold text-gray-900">Manage Tickets</h1>
           </div>
         </header>
+
         <div className="flex flex-1 flex-col gap-4 p-8 bg-[rgba(219,234,254,0.3)]">
           <div className="mb-4">
             <p className="text-gray-600">Generate tickets for passengers</p>
           </div>
+
           {/* Action Bar */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
@@ -168,6 +195,7 @@ export default function ManageTickets() {
               </Button>
             </div>
           </div>
+
           {/* Tickets Table */}
           <Card className="bg-white shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl border-0">
             <CardContent className="p-0">
@@ -206,6 +234,7 @@ export default function ManageTickets() {
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">Time</th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">Seat</th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">Payment</th>
+                        <th className="text-left py-4 px-4 font-semibold text-gray-900">Status</th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">Actions</th>
                       </tr>
                     </thead>
@@ -213,6 +242,7 @@ export default function ManageTickets() {
                       {tickets.map((ticket) => {
                         // Debug each ticket as it's rendered
                         console.log("Rendering ticket:", ticket.id, ticket.ticketNumber)
+                        console.log("Ticket status:", ticket.status) // Add this line
                         return (
                           <tr
                             key={ticket.id || ticket.ticketNumber}
@@ -226,11 +256,20 @@ export default function ManageTickets() {
                             <td className="py-4 px-4 text-gray-900">{ticket.time}</td>
                             <td className="py-4 px-4 text-gray-900">{ticket.seat}</td>
                             <td className="py-4 px-4">
-                              <Badge className={getPaymentStatusColor(ticket.payment)}>{ticket.payment}</Badge>
+                              <PaymentStatusBadge status={ticket.payment} />
+                            </td>
+                            <td className="py-4 px-4">
+                              <TicketStatusBadge status={ticket.status || "ACTIVE"} />
                             </td>
                             <td className="py-4 px-4">
                               <div className="flex items-center space-x-2">
-                                <EditTicketModal ticket={ticket} onTicketUpdated={fetchTickets} />
+                                <EditTicketModal
+                                  ticket={{
+                                    ...ticket,
+                                    status: ticket.status || "ACTIVE", // Ensure status always has a value
+                                  }}
+                                  onTicketUpdated={fetchTickets}
+                                />
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button
@@ -246,18 +285,34 @@ export default function ManageTickets() {
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete this ticket? This action cannot be undone.
-                                        <br />
-                                        <br />
-                                        <strong>Ticket Details:</strong>
-                                        Ticket Number: {ticket.ticketNumber}
-                                        <br />
-                                        Passenger: {ticket.passenger}
-                                        <br />
-                                        Route: {ticket.route}
-                                        <br />
-                                        Date: {ticket.date}
+                                      <AlertDialogDescription asChild>
+                                        <div className="space-y-3">
+                                          <div>
+                                            Are you sure you want to delete this ticket? This action cannot be undone.
+                                          </div>
+                                          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md space-y-1">
+                                            <div>
+                                              <strong>Ticket Number:</strong> {ticket.ticketNumber}
+                                            </div>
+                                            <div>
+                                              <strong>Passenger:</strong> {ticket.passenger}
+                                            </div>
+                                            <div>
+                                              <strong>Route:</strong> {ticket.route}
+                                            </div>
+                                            <div>
+                                              <strong>Date:</strong> {ticket.date}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <strong>Payment:</strong>
+                                              <PaymentStatusBadge status={ticket.payment} />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <strong>Status:</strong>
+                                              <TicketStatusBadge status={ticket.status || "ACTIVE"} />
+                                            </div>
+                                          </div>
+                                        </div>
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>

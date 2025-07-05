@@ -15,6 +15,7 @@ interface Trip {
   availableSeats: number
   driverName?: string
   driverPhone?: string
+  status?: string
   van: {
     id: number
     plateNumber: string
@@ -44,6 +45,14 @@ interface EditTripModalProps {
   onUpdated?: () => void
 }
 
+const TRIP_STATUSES = [
+  { value: "SCHEDULED", label: "Scheduled" },
+  { value: "BOARDING", label: "Boarding" },
+  { value: "DEPARTED", label: "Departed" },
+  { value: "COMPLETED", label: "Completed" },
+  { value: "CANCELLED", label: "Cancelled" },
+]
+
 export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: EditTripModalProps) {
   const [vans, setVans] = useState<Van[]>([])
   const [routes, setRoutes] = useState<Route[]>([])
@@ -54,6 +63,7 @@ export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: E
     availableSeats: "",
     driverName: "",
     driverPhone: "",
+    status: "SCHEDULED",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -67,6 +77,7 @@ export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: E
         availableSeats: trip.availableSeats.toString(),
         driverName: trip.driverName || "",
         driverPhone: trip.driverPhone || "",
+        status: trip.status || "SCHEDULED",
       })
     }
   }, [trip])
@@ -77,7 +88,6 @@ export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: E
       const fetchData = async () => {
         try {
           const [vanRes, routeRes] = await Promise.all([fetch("/api/admin/vans"), fetch("/api/admin/routes")])
-
           if (vanRes.ok) {
             const vansData = await vanRes.json()
             setVans(vansData)
@@ -112,16 +122,14 @@ export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: E
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!trip) return
 
-    if (!formData.vanId || !formData.routeId || !formData.tripDate || !formData.availableSeats) {
+    if (!formData.vanId || !formData.routeId || !formData.tripDate || !formData.availableSeats || !formData.status) {
       toast.error("Please fill in all required fields")
       return
     }
 
     setIsSubmitting(true)
-
     try {
       const response = await fetch("/api/admin/trips", {
         method: "PUT",
@@ -134,6 +142,7 @@ export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: E
           availableSeats: Number.parseInt(formData.availableSeats),
           driverName: formData.driverName || undefined,
           driverPhone: formData.driverPhone || undefined,
+          status: formData.status,
         }),
       })
 
@@ -164,6 +173,7 @@ export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: E
         availableSeats: trip.availableSeats.toString(),
         driverName: trip.driverName || "",
         driverPhone: trip.driverPhone || "",
+        status: trip.status || "SCHEDULED",
       })
     }
   }
@@ -251,7 +261,29 @@ export default function EditTripModal({ trip, open, onOpenChange, onUpdated }: E
               className="bg-gray-100 cursor-not-allowed"
               disabled={isSubmitting}
             />
-            <p className="text-xs text-gray-500"> Seats are automatically set based on the selected van capacity</p>
+            <p className="text-xs text-gray-500">Seats are automatically set based on the selected van capacity</p>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Status</Label>
+            <Select
+              onValueChange={(value) => handleInputChange("status", value)}
+              value={formData.status}
+              disabled={isSubmitting}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {TRIP_STATUSES.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Driver Name */}

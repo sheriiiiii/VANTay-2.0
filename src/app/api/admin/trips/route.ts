@@ -23,10 +23,16 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     console.log("Received body:", body)
-    const { vanId, routeId, tripDate, availableSeats, driverName, driverPhone } = body
+    const { vanId, routeId, tripDate, availableSeats, driverName, driverPhone, status = "SCHEDULED" } = body
 
     if (!vanId || !routeId || !tripDate || !availableSeats || isNaN(new Date(tripDate).getTime())) {
       return NextResponse.json({ error: "Missing or invalid required fields" }, { status: 400 })
+    }
+
+    // Validate status
+    const validStatuses = ["SCHEDULED", "BOARDING", "DEPARTED", "COMPLETED", "CANCELLED"]
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid trip status" }, { status: 400 })
     }
 
     const van = await prisma.van.findUnique({ where: { id: Number(vanId) } })
@@ -58,6 +64,7 @@ export async function POST(req: Request) {
         availableSeats: Number.parseInt(availableSeats),
         driverName,
         driverPhone,
+        status,
       },
     })
 
@@ -101,10 +108,16 @@ export async function DELETE(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json()
-    const { id, vanId, routeId, tripDate, availableSeats, driverName, driverPhone } = body
+    const { id, vanId, routeId, tripDate, availableSeats, driverName, driverPhone, status } = body
 
-    if (!id || !vanId || !routeId || !tripDate || !availableSeats || isNaN(new Date(tripDate).getTime())) {
+    if (!id || !vanId || !routeId || !tripDate || !availableSeats || isNaN(new Date(tripDate).getTime()) || !status) {
       return NextResponse.json({ error: "Missing or invalid required fields" }, { status: 400 })
+    }
+
+    // Validate status
+    const validStatuses = ["SCHEDULED", "BOARDING", "DEPARTED", "COMPLETED", "CANCELLED"]
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid trip status" }, { status: 400 })
     }
 
     // Check if trip exists
@@ -151,6 +164,7 @@ export async function PUT(req: Request) {
         availableSeats: Number.parseInt(availableSeats),
         driverName: driverName || null,
         driverPhone: driverPhone || null,
+        status,
       },
       include: {
         van: true,

@@ -6,7 +6,6 @@ const prisma = new PrismaClient()
 export async function GET() {
   try {
     console.log("=== GET /api/admin/tickets ===")
-
     const tickets = await prisma.ticket.findMany({
       orderBy: { bookedAt: "desc" },
       include: {
@@ -20,7 +19,6 @@ export async function GET() {
     })
 
     console.log(`Found ${tickets.length} tickets`)
-
     const formattedTickets = tickets.map((ticket) => ({
       id: ticket.id,
       ticketNumber: ticket.ticketNumber,
@@ -31,6 +29,7 @@ export async function GET() {
       time: ticket.trip.arrivalTime || "N/A",
       seat: ticket.seat.seatNumber,
       payment: ticket.paymentStatus,
+      status: ticket.ticketStatus,
     }))
 
     return NextResponse.json(formattedTickets)
@@ -49,10 +48,8 @@ export async function GET() {
 export async function DELETE(request: Request) {
   try {
     console.log("=== DELETE /api/admin/tickets ===")
-
     const { searchParams } = new URL(request.url)
     const ticketIdParam = searchParams.get("id")
-
     console.log("Received delete request for ticket ID:", ticketIdParam)
 
     if (!ticketIdParam) {
@@ -61,7 +58,6 @@ export async function DELETE(request: Request) {
     }
 
     const ticketId = Number.parseInt(ticketIdParam, 10)
-
     if (isNaN(ticketId)) {
       console.log("Invalid ticket ID format:", ticketIdParam)
       return NextResponse.json({ error: "Invalid ticket ID format" }, { status: 400 })
@@ -112,7 +108,6 @@ export async function DELETE(request: Request) {
     console.error("[DELETE /api/admin/tickets] Error:", error)
     console.error("Error type:", typeof error)
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace")
-
     return NextResponse.json(
       {
         error: "Failed to delete ticket",
@@ -143,11 +138,10 @@ export async function PUT(request: Request) {
     console.log("Update request body:", body)
 
     // Validate required fields
-    const { passengerName, passengerPhone, paymentStatus } = body
-
-    if (!passengerName || !passengerPhone || !paymentStatus) {
+    const { passengerName, passengerPhone, paymentStatus, ticketStatus } = body
+    if (!passengerName || !passengerPhone || !paymentStatus || !ticketStatus) {
       return NextResponse.json(
-        { error: "Missing required fields: passengerName, passengerPhone, paymentStatus" },
+        { error: "Missing required fields: passengerName, passengerPhone, paymentStatus, ticketStatus" },
         { status: 400 },
       )
     }
@@ -157,6 +151,15 @@ export async function PUT(request: Request) {
     if (!validPaymentStatuses.includes(paymentStatus)) {
       return NextResponse.json(
         { error: `Invalid payment status. Must be one of: ${validPaymentStatuses.join(", ")}` },
+        { status: 400 },
+      )
+    }
+
+    // Validate ticket status
+    const validTicketStatuses = ["ACTIVE", "USED", "CANCELLED", "EXPIRED"]
+    if (!validTicketStatuses.includes(ticketStatus)) {
+      return NextResponse.json(
+        { error: `Invalid ticket status. Must be one of: ${validTicketStatuses.join(", ")}` },
         { status: 400 },
       )
     }
@@ -182,6 +185,7 @@ export async function PUT(request: Request) {
       id: existingTicket.id,
       ticketNumber: existingTicket.ticketNumber,
       currentPaymentStatus: existingTicket.paymentStatus,
+      currentTicketStatus: existingTicket.ticketStatus,
     })
 
     // Update the ticket
@@ -191,8 +195,7 @@ export async function PUT(request: Request) {
         passengerName: passengerName.trim(),
         passengerPhone: passengerPhone.trim(),
         paymentStatus,
-        // Update ticket status based on payment status
-        ticketStatus: paymentStatus === "PAID" ? "ACTIVE" : existingTicket.ticketStatus,
+        ticketStatus,
       },
       include: {
         trip: {
@@ -208,6 +211,7 @@ export async function PUT(request: Request) {
       id: updatedTicket.id,
       ticketNumber: updatedTicket.ticketNumber,
       newPaymentStatus: updatedTicket.paymentStatus,
+      newTicketStatus: updatedTicket.ticketStatus,
     })
 
     // Return formatted response
@@ -221,6 +225,7 @@ export async function PUT(request: Request) {
       time: updatedTicket.trip.arrivalTime || "N/A",
       seat: updatedTicket.seat.seatNumber,
       payment: updatedTicket.paymentStatus,
+      status: updatedTicket.ticketStatus,
     }
 
     return NextResponse.json({
@@ -232,7 +237,6 @@ export async function PUT(request: Request) {
     console.error("[PUT /api/admin/tickets] Error:", error)
     console.error("Error type:", typeof error)
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace")
-
     return NextResponse.json(
       {
         error: "Failed to update ticket",

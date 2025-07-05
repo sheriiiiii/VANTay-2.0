@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import type { VanWithRoute } from "@/lib/types"
 
@@ -16,12 +17,19 @@ interface EditVanModalProps {
   onUpdated?: () => void
 }
 
+const VAN_STATUSES = [
+  { value: "ACTIVE", label: "Active" },
+  { value: "MAINTENANCE", label: "Maintenance" },
+  { value: "INACTIVE", label: "Inactive" },
+]
+
 export default function EditVanModal({ van, open, onOpenChange, onUpdated }: EditVanModalProps) {
   const [formData, setFormData] = useState({
     plateNumber: "",
     model: "",
     capacity: "",
     routeId: "",
+    status: "ACTIVE",
   })
   const [routes, setRoutes] = useState<{ id: number; name: string }[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -34,6 +42,7 @@ export default function EditVanModal({ van, open, onOpenChange, onUpdated }: Edi
         model: van.model,
         capacity: van.capacity.toString(),
         routeId: van.route?.id?.toString() || "",
+        status: van.status || "ACTIVE",
       })
     }
   }, [van])
@@ -59,17 +68,15 @@ export default function EditVanModal({ van, open, onOpenChange, onUpdated }: Edi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!van) return
 
     const capacity = Number.parseInt(formData.capacity)
-    if (!formData.plateNumber || !formData.model || isNaN(capacity) || !formData.routeId) {
+    if (!formData.plateNumber || !formData.model || isNaN(capacity) || !formData.routeId || !formData.status) {
       toast.error("Please complete all required fields.")
       return
     }
 
     setIsSubmitting(true)
-
     try {
       const response = await fetch(`/api/admin/vans/${van.id}`, {
         method: "PUT",
@@ -81,6 +88,7 @@ export default function EditVanModal({ van, open, onOpenChange, onUpdated }: Edi
           model: formData.model,
           capacity,
           routeId: Number(formData.routeId),
+          status: formData.status,
         }),
       })
 
@@ -113,6 +121,7 @@ export default function EditVanModal({ van, open, onOpenChange, onUpdated }: Edi
         model: van.model,
         capacity: van.capacity.toString(),
         routeId: van.route?.id?.toString() || "",
+        status: van.status || "ACTIVE",
       })
     }
   }
@@ -134,6 +143,7 @@ export default function EditVanModal({ van, open, onOpenChange, onUpdated }: Edi
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-model">Model</Label>
             <Input
@@ -144,6 +154,7 @@ export default function EditVanModal({ van, open, onOpenChange, onUpdated }: Edi
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-capacity">Capacity</Label>
             <Input
@@ -155,24 +166,47 @@ export default function EditVanModal({ van, open, onOpenChange, onUpdated }: Edi
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-routeId">Route</Label>
-            <select
-              id="edit-routeId"
+            <Select
               value={formData.routeId}
-              onChange={(e) => handleInputChange("routeId", e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              onValueChange={(value) => handleInputChange("routeId", value)}
               disabled={isSubmitting}
-              required
             >
-              <option value="">Select a route</option>
-              {routes.map((route) => (
-                <option key={route.id} value={route.id}>
-                  {route.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a route" />
+              </SelectTrigger>
+              <SelectContent>
+                {routes.map((route) => (
+                  <SelectItem key={route.id} value={route.id.toString()}>
+                    {route.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-status">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => handleInputChange("status", value)}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {VAN_STATUSES.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex gap-2 pt-4">
             <Button
               type="button"

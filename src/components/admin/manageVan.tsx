@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Settings, Filter, ArrowUpDown, Edit, Trash2 } from "lucide-react"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import AdminSidebar from "@/components/sidebar/AdminSidebar"
@@ -21,6 +22,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import type { VanWithRoute } from "@/lib/types"
+
+// Status badge component
+function StatusBadge({ status }: { status: string }) {
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return { variant: "default" as const, className: "bg-green-100 text-green-800 hover:bg-green-100" }
+      case "MAINTENANCE":
+        return { variant: "secondary" as const, className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100" }
+      case "INACTIVE":
+        return { variant: "destructive" as const, className: "bg-red-100 text-red-800 hover:bg-red-100" }
+      default:
+        return { variant: "outline" as const, className: "" }
+    }
+  }
+
+  const config = getStatusConfig(status)
+
+  return (
+    <Badge variant={config.variant} className={config.className}>
+      {status}
+    </Badge>
+  )
+}
 
 export default function ManageVan() {
   const [vans, setVans] = useState<VanWithRoute[]>([])
@@ -131,13 +156,14 @@ export default function ManageVan() {
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">Model</th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">Capacity</th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">Route</th>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-900">Status</th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {isLoading ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-gray-500">
+                        <td colSpan={6} className="py-8 text-center text-gray-500">
                           <div className="flex items-center justify-center space-x-2">
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400" />
                             <span>Loading vans...</span>
@@ -146,7 +172,7 @@ export default function ManageVan() {
                       </tr>
                     ) : vans.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-gray-500">
+                        <td colSpan={6} className="py-8 text-center text-gray-500">
                           No vans found. Create your first van to get started.
                         </td>
                       </tr>
@@ -160,6 +186,9 @@ export default function ManageVan() {
                           <td className="py-4 px-6 text-gray-900">{van.model}</td>
                           <td className="py-4 px-6 text-gray-900">{van.capacity} seats</td>
                           <td className="py-4 px-6 text-gray-900">{van.route?.name || "N/A"}</td>
+                          <td className="py-4 px-6">
+                            <StatusBadge status={van.status || "ACTIVE"} />
+                          </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center space-x-2">
                               <Button
@@ -220,6 +249,10 @@ export default function ManageVan() {
                       </div>
                       <div>
                         <strong>Route:</strong> {vanToDelete.route?.name || "N/A"}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <strong>Status:</strong>
+                        <StatusBadge status={vanToDelete.status || "ACTIVE"} />
                       </div>
                     </div>
                   )}
