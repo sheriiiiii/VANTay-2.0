@@ -221,7 +221,6 @@ export default function Payment() {
           <p>Ticket: {ticketData.ticketNumber}</p>
           <p>Route: {ticketData.trip.route}</p>
           <p>Seat: {ticketData.seat.seatNumber}</p>
-          <p>Departure: {ticketData.trip.arrivalTime}</p>
         </div>
       </div>
     </div>

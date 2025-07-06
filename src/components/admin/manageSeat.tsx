@@ -1,3 +1,5 @@
+//VANTay-2.0\src\components\admin\manageSeat.tsx
+
 "use client";
 
 import Image from "next/image";
