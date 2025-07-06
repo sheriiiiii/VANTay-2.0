@@ -2,9 +2,12 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 // PUT update a van
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const vanId = Number.parseInt(params.id)
+    // Await the params since they're now a Promise in Next.js 15
+    const { id } = await params
+    const vanId = Number.parseInt(id)
+
     if (isNaN(vanId)) {
       return NextResponse.json({ error: "Invalid van ID" }, { status: 400 })
     }
@@ -84,9 +87,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE a van
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const vanId = Number.parseInt(params.id)
+    // Await the params since they're now a Promise in Next.js 15
+    const { id } = await params
+    const vanId = Number.parseInt(id)
+
     if (isNaN(vanId)) {
       return NextResponse.json({ error: "Invalid van ID" }, { status: 400 })
     }
@@ -100,6 +106,23 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Van not found" }, { status: 404 })
     }
 
+    // Check if van has active trips
+    const activeTrips = await prisma.trip.findFirst({
+      where: {
+        vanId,
+        tripDate: {
+          gte: new Date(),
+        },
+      },
+    })
+
+    if (activeTrips) {
+      return NextResponse.json(
+        { error: "Cannot delete van with active trips. Please cancel or complete all trips first." },
+        { status: 400 },
+      )
+    }
+
     // Delete van and related data in transaction
     await prisma.$transaction(async (tx) => {
       // Delete seats first (due to foreign key constraint)
@@ -107,7 +130,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         where: { vanId },
       })
 
-      // Delete trips
+      // Delete past trips
       await tx.trip.deleteMany({
         where: { vanId },
       })
@@ -122,5 +145,46 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   } catch (error) {
     console.error("Error deleting van:", error)
     return NextResponse.json({ error: "Failed to delete van" }, { status: 500 })
+  }
+}
+
+// GET a specific van
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    // Await the params since they're now a Promise in Next.js 15
+    const { id } = await params
+    const vanId = Number.parseInt(id)
+
+    if (isNaN(vanId)) {
+      return NextResponse.json({ error: "Invalid van ID" }, { status: 400 })
+    }
+
+    const van = await prisma.van.findUnique({
+      where: { id: vanId },
+      include: {
+        route: true,
+        trips: {
+          where: {
+            tripDate: {
+              gte: new Date(),
+            },
+          },
+          orderBy: { tripDate: "asc" },
+          take: 10,
+        },
+        seats: {
+          orderBy: { seatNumber: "asc" },
+        },
+      },
+    })
+
+    if (!van) {
+      return NextResponse.json({ error: "Van not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(van)
+  } catch (error) {
+    console.error("Error fetching van:", error)
+    return NextResponse.json({ error: "Failed to fetch van" }, { status: 500 })
   }
 }
