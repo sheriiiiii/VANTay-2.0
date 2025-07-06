@@ -1,35 +1,50 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "sonner"
+import type React from "react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface CreateVanModalProps {
-  trigger?: React.ReactNode
-  onCreated?: () => void
+  trigger?: React.ReactNode;
+  onCreated?: () => void;
 }
 
 const VAN_STATUSES = [
   { value: "ACTIVE", label: "Active" },
   { value: "MAINTENANCE", label: "Maintenance" },
   { value: "INACTIVE", label: "Inactive" },
-]
+];
 
-export default function CreateVanModal({ trigger, onCreated }: CreateVanModalProps) {
-  const [open, setOpen] = useState(false)
+export default function CreateVanModal({
+  trigger,
+  onCreated,
+}: CreateVanModalProps) {
+  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     plateNumber: "",
     model: "",
     capacity: "",
     routeId: "",
     status: "ACTIVE",
-  })
-  const [routes, setRoutes] = useState<{ id: number; name: string }[]>([])
+  });
+  const [routes, setRoutes] = useState<{ id: number; name: string }[]>([]);
 
   // Fetch routes when modal opens
   useEffect(() => {
@@ -38,24 +53,30 @@ export default function CreateVanModal({ trigger, onCreated }: CreateVanModalPro
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) {
-            setRoutes(data)
+            setRoutes(data);
           } else {
-            throw new Error("Invalid routes")
+            throw new Error("Invalid routes");
           }
         })
         .catch((err) => {
-          console.error("Failed to fetch routes", err)
-          toast.error("Failed to load routes")
-        })
+          console.error("Failed to fetch routes", err);
+          toast.error("Failed to load routes");
+        });
     }
-  }, [open])
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const capacity = Number.parseInt(formData.capacity)
-    if (!formData.plateNumber || !formData.model || isNaN(capacity) || !formData.routeId || !formData.status) {
-      toast.error("Please complete all required fields.")
-      return
+    e.preventDefault();
+    const capacity = Number.parseInt(formData.capacity);
+    if (
+      !formData.plateNumber ||
+      !formData.model ||
+      isNaN(capacity) ||
+      !formData.routeId ||
+      !formData.status
+    ) {
+      toast.error("Please complete all required fields.");
+      return;
     }
 
     try {
@@ -71,40 +92,44 @@ export default function CreateVanModal({ trigger, onCreated }: CreateVanModalPro
           routeId: Number(formData.routeId),
           status: formData.status,
         }),
-      })
+      });
 
-      if (!response.ok) throw new Error("Failed to create van")
+      if (!response.ok) throw new Error("Failed to create van");
 
-      toast.success("Van created successfully!")
-      setOpen(false)
+      toast.success("Van created successfully!");
+      setOpen(false);
       setFormData({
         plateNumber: "",
         model: "",
         capacity: "",
         routeId: "",
         status: "ACTIVE",
-      })
-      if (onCreated) onCreated()
+      });
+      if (onCreated) onCreated();
     } catch (err) {
-      console.error(err)
-      toast.error("Error creating van")
+      console.error(err);
+      toast.error("Error creating van");
     }
-  }
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2 rounded-full">Add New Van</Button>
+          <Button className="bg-cyan-600 hover:bg-slate-800 text-white px-6 py-2 rounded-xl">
+            Add New Van
+          </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900">Create Van</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            Create Van
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -140,7 +165,10 @@ export default function CreateVanModal({ trigger, onCreated }: CreateVanModalPro
 
           <div className="space-y-2">
             <Label htmlFor="routeId">Route</Label>
-            <Select value={formData.routeId} onValueChange={(value) => handleInputChange("routeId", value)}>
+            <Select
+              value={formData.routeId}
+              onValueChange={(value) => handleInputChange("routeId", value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a route" />
               </SelectTrigger>
@@ -156,7 +184,10 @@ export default function CreateVanModal({ trigger, onCreated }: CreateVanModalPro
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => handleInputChange("status", value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
@@ -170,11 +201,14 @@ export default function CreateVanModal({ trigger, onCreated }: CreateVanModalPro
             </Select>
           </div>
 
-          <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-lg mt-6">
+          <Button
+            type="submit"
+            className="w-full bg-cyan-500 hover:bg-slate-800 text-white py-2 rounded-lg mt-6"
+          >
             Create Van
           </Button>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

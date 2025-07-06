@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
@@ -11,7 +12,7 @@ import {
   LogOut,
   Settings,
   Route,
-  MapPinned, 
+  MapPinned,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,12 +53,24 @@ export default function AdminSidebar() {
   };
 
   const navigationItems = [
-    { name: "Dashboard", href: "/admin/dashboard", icon: Home },
-    { name: "Routes", href: "/admin/dashboard/manage-route", icon: Route },
-    { name: "Vans", href: "/admin/dashboard/manage-van", icon: Bus },
-    { name: "Trips", href: "/admin/dashboard/manage-trip", icon: MapPinned },
-    { name: "Seats", href: "/admin/dashboard/manage-seat", icon: Users },
-    { name: "Tickets", href: "/admin/dashboard/manage-ticket", icon: Ticket },
+    { name: "Admin Panel", href: "/admin/dashboard", icon: Home },
+    { name: "Trip Routes", href: "/admin/dashboard/manage-route", icon: Route },
+    { name: "Van Fleet", href: "/admin/dashboard/manage-van", icon: Bus },
+    {
+      name: "Trip Planner",
+      href: "/admin/dashboard/manage-trip",
+      icon: MapPinned,
+    },
+    {
+      name: "Seat Selection",
+      href: "/admin/dashboard/manage-seat",
+      icon: Users,
+    },
+    {
+      name: "Ticket Logs",
+      href: "/admin/dashboard/manage-ticket",
+      icon: Ticket,
+    },
   ];
 
   const displayName =
@@ -71,32 +84,30 @@ export default function AdminSidebar() {
       .toUpperCase();
 
   return (
-    <Sidebar className="border-r bg-white shadow-lg z-30 w-64">
-      {/* Header */}
-      <SidebarHeader className="border-b border-gray-200">
-        <div className="flex items-center space-x-3 p-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center shadow-md">
-            <span className="text-white font-extrabold text-lg tracking-wider">
-              V
-            </span>
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">
-              VANTAY
-            </div>
-            <div className="font-semibold text-gray-900">Welcome Admin</div>
-          </div>
+    <Sidebar className="border-r bg-white w-64 shadow-2xl z-50">
+      <SidebarHeader className="p-6 border-b bg-red border-gray-100 shadow-sm">
+        <div className="flex items-center gap-1">
+          <Image
+            src="/assets/RidA.png"
+            alt="RidA Logo"
+            width={65}
+            height={65}
+            className="object-contain"
+          />
+          <span className="text-sm font-semibold text-[#0f172a]">
+            Welcome Admin
+          </span>
         </div>
       </SidebarHeader>
 
       {/* Navigation */}
-      <SidebarContent className="flex-1">
+      <SidebarContent className="flex-1 py-6">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs text-gray-500 uppercase tracking-wide px-3 py-2">
+          <SidebarGroupLabel className="px-6 pb-3 text-xs font-medium text-black-500 uppercase tracking-wider">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="px-3 space-y-1">
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -107,22 +118,19 @@ export default function AdminSidebar() {
                       asChild
                       isActive={isActive}
                       className={cn(
-                        "transition-all duration-200 hover:bg-blue-50 hover:text-blue-600",
-                        isActive && "bg-blue-100 text-blue-600 font-medium"
+                        "w-full justify-start rounded-lg px-3 py-2.5 text-sm transition-colors",
+                        isActive
+                          ? "bg-sky-200 text-sky-800 font-semibold"
+                          : "text-[#0f172a] hover:bg-sky-100 hover:text-sky-700"
                       )}
                     >
-                      <Link href={item.href} className="flex items-center gap-3.5 px-3 py-2.5">
-  <div
-    className={cn(
-      "p-2 rounded-md transition-all",
-      isActive ? "bg-white text-blue-600 shadow" : "text-gray-600"
-    )}
-  >
-    <Icon className="h-6 w-6" />
-  </div>
-  <span className="text-base font-medium">{item.name}</span>
-</Link>
-
+                      <Link
+                        href={item.href}
+                        className="flex items-center gap-3"
+                      >
+                        <Icon className="h-5 w-5 flex-shrink-0" />
+                        <span>{item.name}</span>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -133,51 +141,55 @@ export default function AdminSidebar() {
       </SidebarContent>
 
       {/* Account Footer */}
-      <SidebarFooter className="border-t border-gray-100">
+      <SidebarFooter className="border-t border-gray-100 p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="cursor-pointer flex items-center justify-between w-full px-3 py-2 hover:bg-gray-50 transition-colors duration-200">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-indigo-600 text-white text-xs font-medium">
+                <SidebarMenuButton className="w-full justify-start rounded-lg px-3 py-2.5 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-sky-500 text-white text-sm font-medium">
                         {getInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">{displayName}</span>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium text-gray-900">
+                        Admin Account
+                      </span>
+                    </div>
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-
               <DropdownMenuContent
                 side="right"
                 align="start"
-                className="w-48 mt-2 ml-3 shadow-md"
+                className="w-48 ml-2 shadow-lg border border-gray-200 rounded-lg"
               >
                 <DropdownMenuItem asChild>
                   <Link
                     href="/admin/profile"
-                    className="flex items-center gap-2 text-sm"
+                    className="flex items-center gap-2 text-sm px-3 py-2"
                   >
-                    <User className="h-4 w-4" /> Profile
+                    <User className="h-4 w-4" />
+                    Profile
                   </Link>
                 </DropdownMenuItem>
-
                 <DropdownMenuItem asChild>
                   <Link
                     href="/admin/settings"
-                    className="flex items-center gap-2 text-sm"
+                    className="flex items-center gap-2 text-sm px-3 py-2"
                   >
-                    <Settings className="h-4 w-4" /> Settings
+                    <Settings className="h-4 w-4" />
+                    Settings
                   </Link>
                 </DropdownMenuItem>
-
                 <DropdownMenuItem
-                  className="text-red-600 focus:text-red-600"
+                  className="text-red-600 focus:text-red-600 px-3 py-2"
                   onClick={handleSignOut}
                 >
-                  <LogOut className="h-4 w-4 mr-2" /> Logout
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

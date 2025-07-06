@@ -66,13 +66,13 @@ export default function ReceiptPage() {
       ctx.fillStyle = "rgba(0, 0, 0, 0.05)"
       ctx.font = "bold 60px Arial"
       ctx.textAlign = "center"
-      ctx.fillText("VANTAY", canvas.width / 2, canvas.height / 2 - 50)
+      ctx.fillText("RidA", canvas.width / 2, canvas.height / 2 - 50)
 
       // Add main content
       ctx.fillStyle = "#000000"
       ctx.font = "bold 24px Arial"
       ctx.textAlign = "center"
-      ctx.fillText("VANTAY", canvas.width / 2, 80)
+      ctx.fillText("RidA", canvas.width / 2, 80)
 
       // Large seat number
       ctx.font = "bold 80px Arial"
@@ -83,7 +83,6 @@ export default function ReceiptPage() {
       ctx.fillText(ticketData.ticketNumber, canvas.width / 2, 280)
       ctx.font = "16px Arial"
       ctx.fillText(ticketData.trip.route, canvas.width / 2, 310)
-      ctx.fillText(`Departure: ${ticketData.trip.arrivalTime}`, canvas.width / 2, 340)
 
       // Payment status
       ctx.font = "14px Arial"
@@ -112,7 +111,7 @@ export default function ReceiptPage() {
             const url = URL.createObjectURL(blob)
             const a = document.createElement("a")
             a.href = url
-            a.download = `vantay-ticket-${ticketData.ticketNumber}.png`
+            a.download = `ridA-ticket-${ticketData.ticketNumber}.png`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -128,7 +127,7 @@ export default function ReceiptPage() {
             const url = URL.createObjectURL(blob)
             const a = document.createElement("a")
             a.href = url
-            a.download = `vantay-ticket-${ticketData.ticketNumber}.png`
+            a.download = `ridA-ticket-${ticketData.ticketNumber}.png`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -208,7 +207,7 @@ export default function ReceiptPage() {
 
             {/* Background Logo - Watermarked */}
             <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-              <div className="text-6xl font-bold text-gray-300 tracking-wider">VANTAY</div>
+              <div className="text-6xl font-bold text-gray-300 tracking-wider">RidA</div>
             </div>
 
             {/* Seat Number - Prominent display */}
@@ -220,7 +219,6 @@ export default function ReceiptPage() {
             <div className="mb-8 relative z-10">
               <p className="text-lg font-semibold text-gray-900 mb-1">{ticketData.ticketNumber}</p>
               <p className="text-gray-700 text-sm mb-1">{ticketData.trip.route}</p>
-              <p className="text-gray-600 text-xs">Departure: {ticketData.trip.arrivalTime}</p>
             </div>
 
             {/* QR Code */}

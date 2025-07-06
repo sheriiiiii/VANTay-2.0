@@ -1,14 +1,18 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Route, Filter, ArrowUpDown, Edit, Trash2 } from "lucide-react"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import AdminSidebar from "@/components/sidebar/AdminSidebar"
-import { Separator } from "@/components/ui/separator"
-import CreateRouteModal from "@/components/modals/createRoute"
-import EditRouteModal from "@/components/modals/editRoute"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Route, Filter, ArrowUpDown, Edit, Trash2 } from "lucide-react";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import AdminSidebar from "@/components/sidebar/AdminSidebar";
+import { Separator } from "@/components/ui/separator";
+import CreateRouteModal from "@/components/modals/createRoute";
+import EditRouteModal from "@/components/modals/editRoute";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,81 +23,85 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { toast } from "sonner"
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 type RouteData = {
-  id: number
-  name: string
-  origin: string
-  destination: string
-}
+  id: number;
+  name: string;
+  origin: string;
+  destination: string;
+};
 
 export default function ManageRouteDash() {
-  const [routes, setRoutes] = useState<RouteData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [editingRoute, setEditingRoute] = useState<RouteData | null>(null)
-  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [routes, setRoutes] = useState<RouteData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [editingRoute, setEditingRoute] = useState<RouteData | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const fetchRoutes = async () => {
     try {
-      const res = await fetch("/api/admin/routes")
-      if (!res.ok) throw new Error("Failed to fetch routes")
-      const data = await res.json()
-      setRoutes(data)
+      const res = await fetch("/api/admin/routes");
+      if (!res.ok) throw new Error("Failed to fetch routes");
+      const data = await res.json();
+      setRoutes(data);
     } catch (error) {
-      console.error("Failed to fetch routes:", error)
-      toast.error("Failed to fetch routes")
+      console.error("Failed to fetch routes:", error);
+      toast.error("Failed to fetch routes");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const deleteRoute = async (routeId: number) => {
-    setDeletingId(routeId)
+    setDeletingId(routeId);
     try {
       const res = await fetch(`/api/admin/routes?id=${routeId}`, {
         method: "DELETE",
-      })
+      });
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to delete route")
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete route");
       }
       // Remove the route from the local state
-      setRoutes(routes.filter((route) => route.id !== routeId))
-      toast.success("Route deleted successfully")
+      setRoutes(routes.filter((route) => route.id !== routeId));
+      toast.success("Route deleted successfully");
     } catch (error) {
-      console.error("Error deleting route:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to delete route")
+      console.error("Error deleting route:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete route"
+      );
     } finally {
-      setDeletingId(null)
+      setDeletingId(null);
     }
-  }
+  };
 
   const handleEditRoute = (route: RouteData) => {
-    setEditingRoute(route)
-    setEditModalOpen(true)
-  }
+    setEditingRoute(route);
+    setEditModalOpen(true);
+  };
 
   const handleRouteUpdated = () => {
-    fetchRoutes() // Refresh the routes list
-  }
+    fetchRoutes(); // Refresh the routes list
+  };
 
   useEffect(() => {
-    fetchRoutes()
-  }, [])
+    fetchRoutes();
+  }, []);
 
   return (
     <SidebarProvider>
       <AdminSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-white shadow-sm">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-r bg-white px-4 py-10 shadow-xl z-50">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex items-center space-x-2">
-            <Route className="h-6 w-6 text-gray-600" />
-            <h1 className="text-2xl font-semibold text-gray-900">Manage Routes</h1>
+            <Route className="h-5 w-5 text-black" />
+            <h1 className="text-[16px] font-semibold text-black">
+              Manage Routes
+            </h1>
           </div>
         </header>
 
@@ -106,10 +114,18 @@ export default function ManageRouteDash() {
           <div className="flex items-center justify-between mb-6">
             <CreateRouteModal onCreated={fetchRoutes} />
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 bg-transparent"
+              >
                 <Filter className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" className="h-10 w-10 bg-transparent">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 bg-transparent"
+              >
                 <ArrowUpDown className="h-4 w-4" />
               </Button>
             </div>
@@ -127,10 +143,15 @@ export default function ManageRouteDash() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-4 px-4 font-semibold text-gray-900">Route Name</th>
-                        <th className="text-left py-4 px-4 font-semibold text-gray-900">Origin</th>
-                        <th className="text-left py-4 px-4 font-semibold text-gray-900">Destination</th>
-                        <th className="text-left py-4 px-4 font-semibold text-gray-900">Actions</th>
+                        <th className="text-left py-4 px-4 font-semibold text-gray-900">
+                          Route Name
+                        </th>
+                        <th className="text-left py-4 px-4 font-semibold text-gray-900">
+                          Origin
+                        </th>
+                        <th className="text-left py-4 px-4 font-semibold text-gray-900">
+                          Destination
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -139,9 +160,15 @@ export default function ManageRouteDash() {
                           key={route.id}
                           className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                         >
-                          <td className="py-4 px-6 text-gray-900">{route.name}</td>
-                          <td className="py-4 px-6 text-gray-900">{route.origin}</td>
-                          <td className="py-4 px-6 text-gray-900">{route.destination}</td>
+                          <td className="py-4 px-6 text-gray-900">
+                            {route.name}
+                          </td>
+                          <td className="py-4 px-6 text-gray-900">
+                            {route.origin}
+                          </td>
+                          <td className="py-4 px-6 text-gray-900">
+                            {route.destination}
+                          </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center space-x-2">
                               <Button
@@ -167,9 +194,12 @@ export default function ManageRouteDash() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Route</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Delete Route
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Are you sure you want to delete this route? This action cannot be undone.
+                                      Are you sure you want to delete this
+                                      route? This action cannot be undone.
                                       <br />
                                       <br />
                                       <strong>Route Details:</strong>
@@ -182,13 +212,17 @@ export default function ManageRouteDash() {
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() => deleteRoute(route.id)}
                                       className="bg-red-600 hover:bg-red-700"
                                       disabled={deletingId === route.id}
                                     >
-                                      {deletingId === route.id ? "Deleting..." : "Delete"}
+                                      {deletingId === route.id
+                                        ? "Deleting..."
+                                        : "Delete"}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -214,5 +248,5 @@ export default function ManageRouteDash() {
         />
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

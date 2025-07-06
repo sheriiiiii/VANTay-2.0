@@ -1,28 +1,40 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CreateTripModalProps {
-  trigger?: React.ReactNode
-  onTripCreated?: () => void
+  trigger?: React.ReactNode;
+  onTripCreated?: () => void;
 }
 
 interface Van {
-  id: number
-  plateNumber: string
-  capacity: number
+  id: number;
+  plateNumber: string;
+  capacity: number;
 }
 
 interface Route {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }
 
 const TRIP_STATUSES = [
@@ -31,12 +43,15 @@ const TRIP_STATUSES = [
   { value: "DEPARTED", label: "Departed" },
   { value: "COMPLETED", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" },
-]
+];
 
-export default function CreateTripModal({ trigger, onTripCreated }: CreateTripModalProps) {
-  const [open, setOpen] = useState(false)
-  const [vans, setVans] = useState<Van[]>([])
-  const [routes, setRoutes] = useState<Route[]>([])
+export default function CreateTripModal({
+  trigger,
+  onTripCreated,
+}: CreateTripModalProps) {
+  const [open, setOpen] = useState(false);
+  const [vans, setVans] = useState<Van[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [formData, setFormData] = useState({
     vanId: "",
     routeId: "",
@@ -45,36 +60,36 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
     driverName: "",
     driverPhone: "",
     status: "SCHEDULED",
-  })
+  });
 
   // Fetch vans and routes
   useEffect(() => {
     const fetchData = async () => {
-      const vanRes = await fetch("/api/admin/vans")
-      const routeRes = await fetch("/api/admin/routes")
-      if (vanRes.ok) setVans(await vanRes.json())
-      if (routeRes.ok) setRoutes(await routeRes.json())
-    }
-    fetchData()
-  }, [])
+      const vanRes = await fetch("/api/admin/vans");
+      const routeRes = await fetch("/api/admin/routes");
+      if (vanRes.ok) setVans(await vanRes.json());
+      if (routeRes.ok) setRoutes(await routeRes.json());
+    };
+    fetchData();
+  }, []);
 
   // Auto-fill available seats from selected van
   useEffect(() => {
-    const selectedVan = vans.find((v) => v.id.toString() === formData.vanId)
+    const selectedVan = vans.find((v) => v.id.toString() === formData.vanId);
     if (selectedVan) {
       setFormData((prev) => ({
         ...prev,
         availableSeats: selectedVan.capacity.toString(),
-      }))
+      }));
     }
-  }, [formData.vanId, vans])
+  }, [formData.vanId, vans]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     const res = await fetch("/api/admin/trips", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -87,11 +102,11 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
         driverPhone: formData.driverPhone || undefined,
         status: formData.status,
       }),
-    })
+    });
 
     if (res.ok) {
-      setOpen(false)
-      onTripCreated?.()
+      setOpen(false);
+      onTripCreated?.();
       setFormData({
         vanId: "",
         routeId: "",
@@ -100,29 +115,37 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
         driverName: "",
         driverPhone: "",
         status: "SCHEDULED",
-      })
+      });
     } else {
-      const errorData = await res.json()
-      alert(errorData.error || "Failed to create trip")
+      const errorData = await res.json();
+      alert(errorData.error || "Failed to create trip");
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2 rounded-full">Add New Trip</Button>
+          <Button className="bg-cyan-600 hover:bg-slate-800 text-white px-6 py-2 rounded-xl">
+            Add New Trip
+          </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900">Create Trip</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            Create Trip
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Van dropdown */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Van</Label>
-            <Select onValueChange={(value) => handleInputChange("vanId", value)} value={formData.vanId} required>
+            <Select
+              onValueChange={(value) => handleInputChange("vanId", value)}
+              value={formData.vanId}
+              required
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a van" />
               </SelectTrigger>
@@ -139,7 +162,11 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
           {/* Route dropdown */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Route</Label>
-            <Select onValueChange={(value) => handleInputChange("routeId", value)} value={formData.routeId} required>
+            <Select
+              onValueChange={(value) => handleInputChange("routeId", value)}
+              value={formData.routeId}
+              required
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a route" />
               </SelectTrigger>
@@ -155,7 +182,10 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
 
           {/* Trip Date */}
           <div className="space-y-2">
-            <Label htmlFor="tripDate" className="text-sm font-medium text-gray-700">
+            <Label
+              htmlFor="tripDate"
+              className="text-sm font-medium text-gray-700"
+            >
               Date
             </Label>
             <Input
@@ -169,7 +199,10 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
 
           {/* Available Seats - auto-filled, readonly */}
           <div className="space-y-2">
-            <Label htmlFor="availableSeats" className="text-sm font-medium text-gray-700">
+            <Label
+              htmlFor="availableSeats"
+              className="text-sm font-medium text-gray-700"
+            >
               Available Seats
             </Label>
             <Input
@@ -184,7 +217,11 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
           {/* Status */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Status</Label>
-            <Select onValueChange={(value) => handleInputChange("status", value)} value={formData.status} required>
+            <Select
+              onValueChange={(value) => handleInputChange("status", value)}
+              value={formData.status}
+              required
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
@@ -200,7 +237,10 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
 
           {/* Driver Name */}
           <div className="space-y-2">
-            <Label htmlFor="driverName" className="text-sm font-medium text-gray-700">
+            <Label
+              htmlFor="driverName"
+              className="text-sm font-medium text-gray-700"
+            >
               Driver Name (Optional)
             </Label>
             <Input
@@ -212,7 +252,10 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
 
           {/* Driver Phone */}
           <div className="space-y-2">
-            <Label htmlFor="driverPhone" className="text-sm font-medium text-gray-700">
+            <Label
+              htmlFor="driverPhone"
+              className="text-sm font-medium text-gray-700"
+            >
               Driver Phone (Optional)
             </Label>
             <Input
@@ -222,11 +265,14 @@ export default function CreateTripModal({ trigger, onTripCreated }: CreateTripMo
             />
           </div>
 
-          <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-lg mt-6">
+          <Button
+            type="submit"
+            className="w-full bg-cyan-600 hover:bg-slate-800 text-white py-2 rounded-lg mt-6"
+          >
             Create Trip
           </Button>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
