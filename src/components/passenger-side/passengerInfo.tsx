@@ -345,14 +345,6 @@ export default function PassengerInfo() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Debug Info */}
-      <div className="max-w-md mx-auto mt-8 p-3 bg-gray-100 rounded text-xs text-gray-600">
-        <p>Debug Info:</p>
-        <p>Trip ID: {tripId}</p>
-        <p>Seat ID: {seatId}</p>
-        <p>Seat Number: {seatNumber}</p>
-      </div>
     </div>
   )
 }

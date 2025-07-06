@@ -1,6 +1,4 @@
-//VANTay-2.0\src\app\api\passenger\tickets\route.ts
-
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
@@ -8,7 +6,6 @@ const prisma = new PrismaClient()
 export async function POST(request: NextRequest) {
   try {
     console.log("=== TICKET CREATION API CALLED ===")
-
     const body = await request.json()
     console.log("Request body:", body)
 
@@ -84,18 +81,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Trip or seat not found" }, { status: 404 })
     }
 
-    // 🎟️ Generate ticket number & QR data
+    // 🎟️ Generate ticket number
     const ticketNumber = `RIDA-${Date.now()}`
-    const qrCodeData = JSON.stringify({
-      ticketNumber,
-      passengerName,
-      seatNumber: seat.seatNumber,
-      tripId: trip.id,
-      route: `${trip.route.origin} to ${trip.route.destination}`,
-      tripDate: trip.tripDate.toISOString(),
-      bookingTime: new Date().toISOString(),
-      totalFare,
-    })
 
     // 📦 Create the ticket
     const ticket = await prisma.ticket.create({
@@ -112,7 +99,7 @@ export async function POST(request: NextRequest) {
         regularFare,
         discount,
         totalFare,
-        qrCode: qrCodeData,
+        qrCode: ticketNumber, // Store just the ticket number for QR lookup
         paymentStatus: "PENDING",
         ticketStatus: "ACTIVE",
       },
@@ -136,8 +123,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 🔗 Generate QR code URL
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`
+    // 🔗 Generate QR code URL that points to the ticket page
+    // Change this URL to match your domain in production
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    const ticketPageUrl = `${baseUrl}/ticket/${ticketNumber}`
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticketPageUrl)}`
 
     // ✅ Build response
     const response = {
@@ -149,7 +139,7 @@ export async function POST(request: NextRequest) {
         discount: ticket.discount,
         passengerType: ticket.passengerType,
         qrCodeUrl,
-        qrCodeData,
+        qrCodeData: ticketPageUrl, // Now contains the URL instead of JSON
         trip: {
           id: ticket.trip.id,
           route: `${ticket.trip.route.origin} to ${ticket.trip.route.destination}`,
@@ -171,7 +161,7 @@ export async function POST(request: NextRequest) {
         error: "Failed to create ticket",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
