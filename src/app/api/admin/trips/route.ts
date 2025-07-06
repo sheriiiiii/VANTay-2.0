@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     console.log("Date filter:", dateParam)
 
     // Build where clause
-    const whereClause: any = {}
+    const whereClause: Record<string, unknown> = {}
 
     // Add date filtering ONLY if date parameter is provided
     if (dateParam) {
