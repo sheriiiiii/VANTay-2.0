@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(request: NextRequest, { params }: { params: { tripId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ tripId: string }> }) {
   try {
-    const { tripId } = params
+    // Await the params since they're now a Promise in Next.js 15
+    const { tripId } = await params
 
     console.log("=== GENERATING PASSENGER MANIFEST ===")
     console.log("Trip ID:", tripId)
@@ -70,7 +71,6 @@ export async function GET(request: NextRequest, { params }: { params: { tripId: 
     }
 
     console.log("Manifest generated for", manifestData.passengers.length, "passengers")
-
     return NextResponse.json(manifestData)
   } catch (error) {
     console.error("Error generating manifest:", error)

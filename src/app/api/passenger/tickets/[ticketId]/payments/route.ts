@@ -1,13 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 
-const prisma = new PrismaClient()
-
-export async function PATCH(request: NextRequest, { params }: { params: { ticketId: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ ticketId: string }> }) {
   try {
     console.log("=== PAYMENT STATUS UPDATE ===")
 
-    const { ticketId } = params
+    // Await the params since they're now a Promise in Next.js 15
+    const { ticketId } = await params
     const body = await request.json()
     const { paymentStatus } = body
 
@@ -37,7 +36,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { ticket
     const ticket = await prisma.ticket.update({
       where: { id: Number(ticketId) },
       data: {
-        paymentStatus: paymentStatus, // ✅ Correct syntax
+        paymentStatus: paymentStatus,
+        // Add payment date if status is PAID
+        ...(paymentStatus === "PAID" && {
+          paymentDate: new Date(),
+        }),
       },
       include: {
         trip: {
@@ -91,7 +94,5 @@ export async function PATCH(request: NextRequest, { params }: { params: { ticket
       },
       { status: 500 },
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

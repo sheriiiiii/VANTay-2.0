@@ -111,6 +111,7 @@ export default function SeatSelection() {
       return
     }
     fetchSeats()
+    /* eslint-disable */
   }, [tripId])
 
   const fetchSeats = async () => {
