@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,62 @@ interface PassengerData {
   classification: string
 }
 
+// Skeleton component for the passenger info form
+function PassengerInfoSkeleton() {
+  const router = useRouter()
+
+  const handleBack = () => {
+    router.back()
+  }
+
+  return (
+    <div className="min-h-screen bg-blue-100 px-4 py-6">
+      {/* Header with real title */}
+      <div className="flex items-center mb-8">
+        <button onClick={handleBack} className="mr-4" title="Go back" aria-label="Go back">
+          <ArrowLeft className="h-6 w-6 text-gray-900" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-700">Passenger Information</h1>
+          <div className="w-16 h-4 bg-gray-300 rounded animate-pulse mt-1"></div>
+        </div>
+      </div>
+
+      {/* Form Container Skeleton */}
+      <div className="max-w-md mx-auto">
+        <Card className="shadow-lg border-0 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              {/* Form fields skeleton */}
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="w-24 h-4 bg-gray-300 rounded animate-pulse"></div>
+                  <div className="w-full h-10 bg-gray-300 rounded animate-pulse"></div>
+                </div>
+              ))}
+
+              {/* Submit Button Skeleton */}
+              <div className="pt-4">
+                <div className="w-full h-12 bg-gray-300 rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Debug Info Skeleton */}
+      <div className="max-w-md mx-auto mt-8 p-3 bg-gray-100 rounded">
+        <div className="w-16 h-3 bg-gray-300 rounded animate-pulse mb-2"></div>
+        <div className="space-y-1">
+          <div className="w-20 h-3 bg-gray-300 rounded animate-pulse"></div>
+          <div className="w-20 h-3 bg-gray-300 rounded animate-pulse"></div>
+          <div className="w-24 h-3 bg-gray-300 rounded animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PassengerInfo() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -26,6 +82,7 @@ export default function PassengerInfo() {
   const seatId = searchParams.get("seatId")
   const seatNumber = searchParams.get("seatNumber")
 
+  const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState<PassengerData>({
     name: "",
     address: "",
@@ -34,9 +91,17 @@ export default function PassengerInfo() {
     emergencyContact: "",
     classification: "",
   })
-
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Simulate loading for form initialization
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false)
+    }, 800) // Simulate loading time
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleInputChange = (field: keyof PassengerData, value: string) => {
     setFormData((prev) => ({
@@ -115,6 +180,10 @@ export default function PassengerInfo() {
         </div>
       </div>
     )
+  }
+
+  if (loading) {
+    return <PassengerInfoSkeleton />
   }
 
   return (
