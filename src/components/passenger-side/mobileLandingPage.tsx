@@ -17,7 +17,7 @@ export default function MobileLandingPage() {
       <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full">
         {/* Logo Section */}
         <Image
-          src="/assets/rida-logo.png"
+          src="/assets/rida.png"
           alt="RidA Logo"
           width={550}
           height={550}

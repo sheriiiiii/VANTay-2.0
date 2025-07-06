@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 🎟️ Generate ticket number & QR data
-    const ticketNumber = `VANTAY-${Date.now()}`
+    const ticketNumber = `RIDA-${Date.now()}`
     const qrCodeData = JSON.stringify({
       ticketNumber,
       passengerName,

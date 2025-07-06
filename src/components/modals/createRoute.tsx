@@ -60,7 +60,9 @@ export default function CreateRouteModal({ onCreated }: CreateRouteModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2 rounded-full">Add Route</Button>
+        <Button className="bg-cyan-600 hover:bg-slate-800 text-white px-6 py-2 rounded-xl">
+          Add Route
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -68,7 +70,12 @@ export default function CreateRouteModal({ onCreated }: CreateRouteModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Route Name</Label>
+            <Label
+              htmlFor="name"
+              className="block mb-2 text-sm font-medium text-gray-700"
+            >
+              Route Name
+            </Label>
             <Input
               id="name"
               value={formData.name}
@@ -94,7 +101,10 @@ export default function CreateRouteModal({ onCreated }: CreateRouteModalProps) {
               placeholder="e.g. San Jose"
             />
           </div>
-          <Button type="submit" className="w-full">
+          <Button
+            type="submit"
+            className="w-full mt-4 flex- bg-cyan-600 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+          >
             Create Route
           </Button>
         </form>
