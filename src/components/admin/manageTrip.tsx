@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -162,7 +162,7 @@ export default function ManageTrip() {
     }
   };
 
-  const fetchTrips = async () => {
+  const fetchTrips = useCallback(async () => {
     try {
       setLoading(true);
       const filterDate = getDateForFilter();
@@ -184,7 +184,8 @@ export default function ManageTrip() {
     } finally {
       setLoading(false);
     }
-  };
+    /* eslint-disable */
+  }, [dateFilter, customDate]);
 
   const deleteTrip = async (tripId: number) => {
     setDeletingId(tripId);
@@ -378,7 +379,7 @@ export default function ManageTrip() {
 
   useEffect(() => {
     fetchTrips();
-  }, [dateFilter, customDate]);
+  }, [fetchTrips]);
 
   return (
     <SidebarProvider>

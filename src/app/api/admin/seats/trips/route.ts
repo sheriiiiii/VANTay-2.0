@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     console.log("Date filter:", dateParam)
 
     // Build where clause - start with existing status filter
-    const whereClause: any = {
+    const whereClause: import("@prisma/client").Prisma.TripWhereInput = {
       status: "SCHEDULED",
     }
 

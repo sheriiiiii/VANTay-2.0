@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import AdminSidebar from "@/components/sidebar/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Trip {
   id: number;
@@ -146,11 +146,8 @@ export default function ManageSeat() {
   });
 
   // Fetch trips on component mount and when date filter changes
-  useEffect(() => {
-    fetchTrips();
-  }, [dateFilter, customDate]);
 
-  const getDateForFilter = (): string | null => {
+  const getDateForFilter = useCallback((): string | null => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -167,9 +164,9 @@ export default function ManageSeat() {
       default:
         return today.toISOString().split("T")[0]; // Default to today
     }
-  };
+  }, [dateFilter, customDate]);
 
-  const fetchTrips = async () => {
+  const fetchTrips = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -186,7 +183,13 @@ export default function ManageSeat() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getDateForFilter]);
+
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
+
+  // (removed duplicate fetchTrips declaration)
 
   const fetchSeatData = async (tripId: number) => {
     try {
