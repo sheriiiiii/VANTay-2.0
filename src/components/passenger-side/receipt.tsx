@@ -235,13 +235,6 @@ export default function ReceiptPage() {
               />
             </div>
 
-            {/* Status */}
-            <div className="mt-4 relative z-10">
-              <span className="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
-                Payment Pending
-              </span>
-            </div>
-
             {/* Instructions */}
             <div className="mt-4 relative z-10">
               <p className="text-xs text-gray-500">Present this QR code at the counter</p>

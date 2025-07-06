@@ -281,13 +281,13 @@ export default function ManageSeat() {
       ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
       ctx.font = "bold 60px Arial";
       ctx.textAlign = "center";
-      ctx.fillText("VANTAY", canvas.width / 2, canvas.height / 2 - 50);
+      ctx.fillText("RidA", canvas.width / 2, canvas.height / 2 - 50);
 
       // Add main content
       ctx.fillStyle = "#000000";
       ctx.font = "bold 24px Arial";
       ctx.textAlign = "center";
-      ctx.fillText("VANTAY", canvas.width / 2, 80);
+      ctx.fillText("RidA", canvas.width / 2, 80);
 
       // Large seat number
       ctx.font = "bold 80px Arial";
@@ -298,11 +298,6 @@ export default function ManageSeat() {
       ctx.fillText(createdTicket.ticketNumber, canvas.width / 2, 280);
       ctx.font = "16px Arial";
       ctx.fillText(createdTicket.trip.route, canvas.width / 2, 310);
-      ctx.fillText(
-        `Departure: ${createdTicket.trip.arrivalTime}`,
-        canvas.width / 2,
-        340
-      );
 
       // Payment status
       ctx.font = "14px Arial";
@@ -319,14 +314,6 @@ export default function ManageSeat() {
         const qrY = 400;
         ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
 
-        // Add instructions below QR code
-        ctx.fillStyle = "#000000";
-        ctx.font = "12px Arial";
-        ctx.fillText(
-          "Present this ticket at the counter",
-          canvas.width / 2,
-          550
-        );
         ctx.fillText(
           `Total: ₱${createdTicket.totalFare.toFixed(2)}`,
           canvas.width / 2,
@@ -339,7 +326,7 @@ export default function ManageSeat() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `vantay-ticket-${createdTicket.ticketNumber}.png`;
+            a.download = `rida-ticket-${createdTicket.ticketNumber}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -358,7 +345,7 @@ export default function ManageSeat() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `vantay-ticket-${createdTicket.ticketNumber}.png`;
+            a.download = `rida-ticket-${createdTicket.ticketNumber}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -637,9 +624,6 @@ export default function ManageSeat() {
                               <span className="font-medium">
                                 {new Date(trip.tripDate).toLocaleDateString()}
                               </span>
-                            </div>
-                            <div className="font-medium">
-                              Time: {trip.arrivalTime}
                             </div>
                           </div>
                         </div>
@@ -1225,14 +1209,6 @@ export default function ManageSeat() {
                           </span>
                         </div>
 
-                        {/* Time */}
-                        <div className="flex items-center gap-2 pl-3">
-                          <span className="text-black min-w-[90px]">Time:</span>
-                          <span className="bg-green-100 text-black font-medium text-sm px-3 py-0.5 rounded-full w-fit">
-                            {selectedTrip?.arrivalTime || "N/A"}
-                          </span>
-                        </div>
-
                         {/* Passenger */}
                         <div className="flex items-center gap-2 pl-3">
                           <span className="text-black min-w-[90px]">
@@ -1364,7 +1340,7 @@ export default function ManageSeat() {
                   {/* Background Logo - Watermarked */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
                     <div className="text-6xl font-bold text-gray-300 tracking-wider">
-                      VANTAY
+                      RidA
                     </div>
                   </div>
 
@@ -1382,9 +1358,6 @@ export default function ManageSeat() {
                     </p>
                     <p className="text-gray-700 text-sm mb-1">
                       {createdTicket.trip.route}
-                    </p>
-                    <p className="text-gray-600 text-xs">
-                      Departure: {createdTicket.trip.arrivalTime}
                     </p>
                   </div>
 
@@ -1415,9 +1388,6 @@ export default function ManageSeat() {
 
                   {/* Instructions */}
                   <div className="mt-4 relative z-10">
-                    <p className="text-xs text-gray-500">
-                      Present this QR code at the counter
-                    </p>
                     <p className="text-xs text-gray-500">
                       Total: ₱{createdTicket.totalFare.toFixed(2)}
                     </p>
