@@ -280,9 +280,6 @@ export default function ManageTickets() {
                           Date
                         </th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">
-                          Time
-                        </th>
-                        <th className="text-left py-4 px-4 font-semibold text-gray-900">
                           Seat
                         </th>
                         <th className="text-left py-4 px-4 font-semibold text-gray-900">
@@ -322,9 +319,7 @@ export default function ManageTickets() {
                             <td className="py-4 px-4 text-gray-900">
                               {ticket.date}
                             </td>
-                            <td className="py-4 px-4 text-gray-900">
-                              {ticket.time}
-                            </td>
+
                             <td className="py-4 px-4 text-gray-900">
                               {ticket.seat}
                             </td>

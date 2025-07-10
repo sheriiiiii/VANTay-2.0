@@ -192,9 +192,6 @@ export default function ManageVan() {
                       <th className="text-left py-4 px-6 font-semibold text-gray-900">
                         Status
                       </th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                        Actions
-                      </th>
                     </tr>
                   </thead>
                   <tbody>
