@@ -1,5 +1,19 @@
+//VANTay-2.0\src\app\passenger\payment\page.tsx: 
+import { Suspense } from "react"
 import Payment from "@/components/passenger-side/payment"
 
+function PaymentFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+    </div>
+  )
+}
+
 export default function PaymentPage() {
-  return <Payment />
+  return (
+    <Suspense fallback={<PaymentFallback />}>
+      <Payment />
+    </Suspense>
+  )
 }
